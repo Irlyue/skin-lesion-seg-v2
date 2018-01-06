@@ -7,10 +7,11 @@ import tensorflow.contrib.slim as slim
 logger = utils.get_default_logger()
 
 
-def model_placeholder():
-    image = tf.placeholder(tf.uint8, name='image', shape=(None, None, 3))
-    label = tf.placeholder(tf.int32, name='label', shape=(None, None))
-    bbox = tf.placeholder(tf.int32, shape=(None, None, None))
+def model_placeholder(config):
+    height, width = config['input_size']
+    image = tf.placeholder(tf.uint8, name='image_ph', shape=(height, width, 3))
+    label = tf.placeholder(tf.int32, name='label_ph', shape=(height, width))
+    bbox = tf.placeholder(tf.int32, name='bbox_ph', shape=(4,))
     return image, label, bbox
 
 
@@ -22,7 +23,7 @@ class Model:
         """
         self.input_size = input_size
         logger.info('Building model graph...')
-        self.net = net.FCN(image, input_size)
+        self.net = net.FCN(image)
         with tf.name_scope('bbox'):
             conv5_flatten = tf.reshape(self.net.endpoints['conv5'], shape=(1, -1))
             fc6 = slim.fully_connected(conv5_flatten,
@@ -52,6 +53,7 @@ class Model:
         endpoints = self.net.endpoints.copy()
         endpoints['fc6'] = fc6
         endpoints['bbox'] = bbox
+        endpoints['up_score'] = up_score
         endpoints['lesion_mask'] = lesion_mask
         endpoints['lesion_probs'] = lesion_probs
         self.endpoints = endpoints

@@ -1,3 +1,4 @@
+import os
 import time
 import json
 import logging
@@ -47,6 +48,10 @@ def delete_if_exists(path):
         tf.gfile.DeleteRecursively(path)
 
 
+def create_and_delete_if_exists(path):
+    delete_if_exists(path)
+    os.makedirs(path)
+
 def load_config(path=None):
     path = 'config.json' if path is None else path
     with open(path, 'r') as f:
@@ -57,8 +62,25 @@ def load_config(path=None):
 ###################################################################
 #                        tf utilities                             #
 ###################################################################
-def huber_loss(x):
-    pass
+def huber_loss(x, delta=1.0, scope='huber_loss'):
+    with tf.name_scope(scope):
+        flag = tf.abs(x) < delta
+        in_range = 0.5 * tf.square(x)
+        out_range = delta * tf.abs(x) - 0.5 * delta**2
+        result = tf.where(flag, in_range, out_range)
+        return result
+
+
+def save_model(saver, config):
+    sess = tf.get_default_session()
+    save_path = os.path.join(config['train_dir'], 'model')
+    return saver.save(sess, save_path, global_step=tf.train.get_or_create_global_step())
+
+
+def add_summary(writer, op, feed_dict):
+    sess = tf.get_default_session()
+    summary, step = sess.run([op, tf.train.get_or_create_global_step()], feed_dict=feed_dict)
+    writer.add_summary(summary, step)
 
 
 def up_score_layer(bottom,
@@ -126,6 +148,13 @@ def bbox_transform(x, size, name=None):
     return x
 
 
+def reversed_bbox_transform(x, size, name=None):
+    x = tf.reshape(x, shape=(-1,), name=name)
+    x = tf.cast(x, dtype=tf.float32)
+    x = tf.divide(x, size)
+    return x
+
+
 def resize_label(x, size):
     return tf.image.resize_images(x, size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
 
@@ -140,7 +169,7 @@ def calc_bbox(label, gap=5):
     :param label: np.array, with shape(height, width) and dtype=np.int32
     :param gap: int, number of pixels between bounding-box's edge and the object boundary.
     :return:
-        result: tuple of length 4 given(top, left, height, width)
+        result: np.array, with shape(4,) giving (top, left, height, width)
     """
     h, w = label.shape
     top, left, height, width = -1, -1, -1, -1
@@ -162,4 +191,4 @@ def calc_bbox(label, gap=5):
             break
     height = bottom - top + 1
     width = right - left + 1
-    return top, left, height, width
+    return np.array([top, left, height, width], dtype=np.int32)

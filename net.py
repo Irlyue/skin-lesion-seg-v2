@@ -4,17 +4,16 @@ import tensorflow.contrib.slim as slim
 from collections import OrderedDict
 
 
-def prep_image(image, input_size):
+def prep_image(image):
     """
     Image pre-processing operation.
     :param image: tf.placeholder or tf.Tensor, with shape(None, None, 3) and dtype=tf.uint8
     :param input_size: tuple or list, specifying the image height and width
     after resizing.
     :return:
-        result: tf.Tensor, with shape(1, height, width, 3), dtype=tf.float32 and pixel value within [0.0, 1.0]
+        result: tf.Tensor, with shape(1, None, None, 3), dtype=tf.float32 and pixel value within [0.0, 1.0]
     """
     image = tf.cast(image, dtype=tf.float32)
-    image = tf.image.resize_images(image, size=input_size)
     images = tf.expand_dims(image, axis=0)
     images = tf.divide(images, 255.0, name='normalize')
     return images
@@ -37,9 +36,9 @@ def conv2d(inputs,
 
 
 class FCN:
-    def __init__(self, image, input_size):
+    def __init__(self, image):
         with tf.name_scope('image_prep'):
-            images = prep_image(image, input_size)
+            images = prep_image(image)
 
         with tf.name_scope('FCN'):
             conv1 = conv2d(images, 16, 'conv1', ksize=(5, 5))

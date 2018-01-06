@@ -1,7 +1,7 @@
 import os
 import utils
 
-from scipy.misc import imread
+from scipy.misc import imread, imresize
 
 
 class SkinData:
@@ -18,6 +18,8 @@ class SkinData:
 def load_training_data(db, config):
     data_dir = config['data_dir']
     images, labels, listing = load_one_database(data_dir, db)
+    images = [imresize(image, size=config['input_size']) for image in images]
+    labels = [imresize(label, size=config['input_size'], interp='nearest') for label in labels]
     bboxs = calc_bboxs(labels)
     return SkinData(images, labels, bboxs, listing)
 
