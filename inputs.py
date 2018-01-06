@@ -24,6 +24,13 @@ def load_training_data(db, config):
     return SkinData(images, labels, bboxs, listing)
 
 
+def load_raw_data(db, config):
+    data_dir = config['data_dir']
+    images, labels, listing = load_one_database(data_dir, db)
+    bboxs = calc_bboxs(labels)
+    return SkinData(images, labels, bboxs, listing)
+
+
 def calc_bboxs(labels):
     return [utils.calc_bbox(label) for label in labels]
 
@@ -31,10 +38,10 @@ def calc_bboxs(labels):
 def get_image_list(data_dir, db):
     path_one = os.path.join(data_dir, 'Skin Image Data Set-1/skin_data/melanoma/')
     path_two = os.path.join(data_dir, 'Skin Image Data Set-2/skin_data/notmelanoma/')
-    melanoma = [os.path.join(path_one, db, item.split('_')[0])
-                for item in os.listdir(os.path.join(path_one, db)) if not item.endswith('db')]
-    not_melanoma = [os.path.join(path_two, db, item.split('_')[0])
-                    for item in os.listdir(os.path.join(path_two, db)) if not item.endswith('db')]
+    melanoma = [os.path.join(path_one, db, '_'.join(item.split('_')[:-1]))
+                for item in os.listdir(os.path.join(path_one, db)) if item.endswith('.jpg')]
+    not_melanoma = [os.path.join(path_two, db, '_'.join(item.split('_')[:-1]))
+                    for item in os.listdir(os.path.join(path_two, db)) if item.endswith('.jpg')]
     return melanoma, not_melanoma
 
 

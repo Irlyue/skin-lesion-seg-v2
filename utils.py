@@ -52,6 +52,7 @@ def create_and_delete_if_exists(path):
     delete_if_exists(path)
     os.makedirs(path)
 
+
 def load_config(path=None):
     path = 'config.json' if path is None else path
     with open(path, 'r') as f:
@@ -75,6 +76,11 @@ def save_model(saver, config):
     sess = tf.get_default_session()
     save_path = os.path.join(config['train_dir'], 'model')
     return saver.save(sess, save_path, global_step=tf.train.get_or_create_global_step())
+
+
+def load_model(saver, config):
+    sess = tf.get_default_session()
+    saver.restore(sess, tf.train.latest_checkpoint(config['train_dir']))
 
 
 def add_summary(writer, op, feed_dict):
