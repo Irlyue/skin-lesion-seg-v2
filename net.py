@@ -7,12 +7,13 @@ from collections import OrderedDict
 def prep_image(image, input_size):
     """
     Image pre-processing operation.
-    :param image: tf.placeholder or tf.Tensor, with shape(None, None, 3)
+    :param image: tf.placeholder or tf.Tensor, with shape(None, None, 3) and dtype=tf.uint8
     :param input_size: tuple or list, specifying the image height and width
     after resizing.
     :return:
-        result: tf.Tensor, with shape(1, height, width, 3) and pixel value within [0.0, 1.0]
+        result: tf.Tensor, with shape(1, height, width, 3), dtype=tf.float32 and pixel value within [0.0, 1.0]
     """
+    image = tf.cast(image, dtype=tf.float32)
     image = tf.image.resize_images(image, size=input_size)
     images = tf.expand_dims(image, axis=0)
     images = tf.divide(images, 255.0, name='normalize')
@@ -48,6 +49,7 @@ class FCN:
             conv5 = conv2d(conv4, 128, 'conv5')
 
         endpoints = OrderedDict()
+        endpoints['images'] = images
         endpoints['conv1'] = conv1
         endpoints['conv2'] = conv2
         endpoints['conv3'] = conv3
