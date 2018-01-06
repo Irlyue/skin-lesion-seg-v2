@@ -1,4 +1,5 @@
 {
   "lambda": 1.0,
-  "input_size": [224, 224]
+  "input_size": [224, 224],
+  "data_dir": "/home/tlw/datasets/skin-lesion"
 }

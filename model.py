@@ -7,6 +7,13 @@ import tensorflow.contrib.slim as slim
 logger = utils.get_default_logger()
 
 
+def model_placeholder():
+    image = tf.placeholder(tf.uint8, name='image', shape=(None, None, 3))
+    label = tf.placeholder(tf.int32, name='label', shape=(None, None))
+    bbox = tf.placeholder(tf.int32, shape=(None, None, None))
+    return image, label, bbox
+
+
 class Model:
     def __init__(self, image, input_size):
         """
@@ -51,7 +58,7 @@ class Model:
         logger.info('Graph built!')
 
     def __repr__(self):
-        myself = '\n' + '\n'.join('{:>2} {:<10} {!r}{}'.format(i, key, value.dtype, value.shape)
+        myself = '\n' + '\n'.join('{:>2} {:<15} {!r}{}'.format(i, key, value.dtype, value.shape)
                                   for i, (key, value) in enumerate(self.endpoints.items()))
         return myself
 

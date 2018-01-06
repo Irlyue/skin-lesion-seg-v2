@@ -20,6 +20,12 @@ class Timer:
 DEFAULT_LOGGER = None
 
 
+def calc_training_steps(n_epochs, batch_size, n_examples):
+    n_steps_per_epoch = np.ceil(n_examples / batch_size)
+    steps = int(n_epochs * n_steps_per_epoch)
+    return steps
+
+
 def get_default_logger():
     global DEFAULT_LOGGER
     if DEFAULT_LOGGER is None:
@@ -118,8 +124,42 @@ def bbox_transform(x, size, name=None):
     x = tf.cast(x, dtype=tf.int32)
     x = tf.reshape(x, shape=(-1,), name=name)
     return x
+
+
+def resize_label(x, size):
+    return tf.image.resize_images(x, size, method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+
+
 ###################################################################
 #                        image utilities                          #
 ###################################################################
+def calc_bbox(label, gap=5):
+    """
+    Calculate the bounding box given the ground truth label.
 
-
+    :param label: np.array, with shape(height, width) and dtype=np.int32
+    :param gap: int, number of pixels between bounding-box's edge and the object boundary.
+    :return:
+        result: tuple of length 4 given(top, left, height, width)
+    """
+    h, w = label.shape
+    top, left, height, width = -1, -1, -1, -1
+    for i in range(h):
+        if any(label[i] == 1):
+            top = i - gap
+            break
+    for i in reversed(range(h)):
+        if any(label[i] == 1):
+            bottom = i + gap
+            break
+    for i in range(w):
+        if any(label[:, i] == 1):
+            left = i - gap
+            break
+    for i in reversed(range(w)):
+        if any(label[:, i] == 1):
+            right = i + gap
+            break
+    height = bottom - top + 1
+    width = right - left + 1
+    return top, left, height, width
