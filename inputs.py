@@ -1,5 +1,6 @@
 import os
 import utils
+import numpy as np
 
 from scipy.misc import imread, imresize
 
@@ -13,6 +14,16 @@ class SkinData:
 
     def __getitem__(self, idx):
         return self.images[idx], self.labels[idx], self.bboxs[idx]
+
+    def train_batch(self, n_epochs=1, random=True):
+        n_examples = len(self.listing)
+        max_steps = len(self.listing) * n_epochs
+        for i in range(max_steps):
+            if random:
+                idx = np.random.randint(n_examples)
+            else:
+                idx = i
+            yield self.images[idx], self.labels[idx], self.bboxs[idx]
 
 
 def load_training_data(db, config):
