@@ -16,7 +16,7 @@ def model_placeholder(config):
 
 
 class Model:
-    def __init__(self, image, input_size, roi_size):
+    def __init__(self, image, input_size):
         """
         :param image: tf.placeholder or tf.Tensor, one single image with shape(None, None, 3) and dtype=tf.uint8
         :param input_size: list or tuple,
@@ -45,7 +45,7 @@ class Model:
                                             ksize=64,
                                             stride=32)
             roi = utils.crop_bbox(up_score, bbox, limit=input_size)
-            lesion_probs = tf.nn.softmax(roi, name='lesion_probs')
+            lesion_prob = tf.nn.softmax(roi, name='lesion_prob')
             lesion_mask = tf.expand_dims(tf.argmax(roi, axis=3), axis=-1, name='lesion_mask')
 
         endpoints = self.net.endpoints.copy()
@@ -55,7 +55,7 @@ class Model:
         endpoints['up_score'] = up_score
         endpoints['roi'] = roi
         endpoints['lesion_mask'] = lesion_mask
-        endpoints['lesion_probs'] = lesion_probs
+        endpoints['lesion_prob'] = lesion_prob
         self.endpoints = endpoints
         logger.info('Graph built!')
 
