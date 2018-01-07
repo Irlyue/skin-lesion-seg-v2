@@ -25,12 +25,10 @@ def build_train(net, gt_cls_label, gt_bbox, config):
         seg_loss = 0.0
     else:
         bbox = net.endpoints['bbox']
-        roi_label = utils.crop_bbox_and_resize(gt_cls_label, bbox, config['roi_size'],
-                                               limit=config['input_size'],
-                                               method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        roi_label = utils.crop_bbox(gt_cls_label, bbox, limit=config['input_size'])
         summaries.add(tf.summary.image('roi/labels', tf.cast(roi_label, dtype=tf.float32)))
         summaries.add(tf.summary.image('roi/predictions', tf.cast(net.endpoints['lesion_mask'], dtype=tf.float32)))
-        seg_loss = tf.losses.sparse_softmax_cross_entropy(logits=net.endpoints['up_score'],
+        seg_loss = tf.losses.sparse_softmax_cross_entropy(logits=net.endpoints['roi'],
                                                           labels=roi_label)
         seg_loss = tf.multiply(config['lambda'], seg_loss, name='seg_loss')
 

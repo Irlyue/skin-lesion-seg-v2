@@ -32,29 +32,28 @@ class Model:
                                        scope='fc6')
             bbox = utils.bbox_transform(fc6, input_size[0], name='bbox')
 
-        with tf.variable_scope('segmentation'):
-            roi_image = utils.crop_bbox_and_resize(image, bbox, roi_size, limit=input_size)
-            self.seg_net = net.FCN(roi_image)
-            score = net.conv2d(self.seg_net.endpoints['conv4'],
+        with tf.name_scope('segmentation'):
+            score = net.conv2d(self.net.endpoints['conv5'],
                                scope='conv6',
                                n_filters=128,
                                stride=1,
                                ksize=(3, 3),
                                activation_fn=None)
             up_score = utils.up_score_layer(score,
-                                            shape=[1, roi_size[0], roi_size[1], 2],
+                                            shape=[1, *input_size, 2],
                                             num_classes=2,
-                                            ksize=32,
-                                            stride=16)
-            lesion_probs = tf.nn.softmax(up_score, name='lesion_probs')
-            lesion_mask = tf.expand_dims(tf.argmax(up_score, axis=3), axis=-1, name='lesion_mask')
+                                            ksize=64,
+                                            stride=32)
+            roi = utils.crop_bbox(up_score, bbox, limit=input_size)
+            lesion_probs = tf.nn.softmax(roi, name='lesion_probs')
+            lesion_mask = tf.expand_dims(tf.argmax(roi, axis=3), axis=-1, name='lesion_mask')
 
         endpoints = self.net.endpoints.copy()
         endpoints['fc6'] = fc6
         endpoints['bbox'] = bbox
-        for key in self.seg_net.endpoints:
-            endpoints['seg/' + key] = self.seg_net.endpoints[key]
+        endpoints['score'] = score
         endpoints['up_score'] = up_score
+        endpoints['roi'] = roi
         endpoints['lesion_mask'] = lesion_mask
         endpoints['lesion_probs'] = lesion_probs
         self.endpoints = endpoints
