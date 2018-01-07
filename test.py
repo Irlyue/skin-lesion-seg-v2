@@ -14,7 +14,7 @@ logger = utils.get_default_logger()
 
 def test_model():
     image = tf.placeholder(dtype=tf.uint8, name='images', shape=config['input_size'] + [3])
-    mm = model.Model(image, config['input_size'], config['roi_size'])
+    mm = model.Model(image, config['input_size'])
     logger.info(mm)
 
 
@@ -31,23 +31,26 @@ def test_huber_loss():
 
 
 def test_evaluation():
-    data = inputs.load_raw_data('dermquest', config)
-    image, label, bbox = data[55]
-    image_in = imresize(image, config['input_size'])
-    bbox_pred = evaluation.inference_one_image(image_in)
+    data = inputs.load_training_data('dermis', config)
+    image, label, bbox = data[1]
+    bbox_pred, cnn_result, cnn_crf_result = evaluation.inference_one_image_from_prob(image)
     top, left, height, width = bbox_pred
 
-    plt.subplot(221)
-    plt.imshow(image_in)
-    plt.subplot(222)
+    plt.subplot(231)
+    plt.imshow(image)
+    plt.subplot(232)
     plt.imshow(label, cmap='gray')
-    plt.subplot(223)
-    plt.imshow(image_in)
+    plt.subplot(233)
+    plt.imshow(image)
     plt.gca().add_patch(plt.Rectangle((left, top), width, height, alpha=0.5))
+    plt.subplot(234)
+    plt.imshow(cnn_result, cmap='gray')
+    plt.subplot(235)
+    plt.imshow(cnn_crf_result, cmap='gray')
     plt.show()
 
 
 if __name__ == '__main__':
-    # test_evaluation()
-    test_model()
+    test_evaluation()
+    # test_model()
     # test_huber_loss()
