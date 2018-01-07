@@ -45,7 +45,7 @@ class FCN:
             conv2 = conv2d(conv1, 32, 'conv2')
             conv3 = conv2d(conv2, 32, 'conv3')
             conv4 = conv2d(conv3, 64, 'conv4')
-            conv5 = conv2d(conv4, 128, 'conv5')
+            conv5 = conv2d(conv4, 64, 'conv5')
 
         endpoints = OrderedDict()
         endpoints['images'] = images
