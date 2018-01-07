@@ -43,15 +43,18 @@ def build_train(net, gt_cls_label, gt_bbox, config):
                                     decay_steps=decay_steps,
                                     staircase=True)
 
-    summaries.add(tf.summary.scalar('loss/bbox_loss', bbox_loss))
-    summaries.add(tf.summary.scalar('loss/seg_loss', seg_loss))
-    summaries.add(tf.summary.scalar('loss/total_loss', total_loss))
+    loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
+    loss_average_op = loss_averages.apply([total_loss, bbox_loss, seg_loss])
+    for l in [total_loss, bbox_loss, seg_loss]:
+        summaries.add(tf.summary.scalar('raw/' + l.op.name, l))
+        summaries.add(tf.summary.scalar('avg/' + l.op.name, loss_averages.average(l)))
+
     summaries.add(tf.summary.scalar('learning_rate', lr))
 
     solver = tf.train.AdamOptimizer(lr)
     grads = solver.compute_gradients(total_loss)
     apply_gradient_op = solver.apply_gradients(grads, global_step=global_step)
-    with tf.control_dependencies([apply_gradient_op]):
+    with tf.control_dependencies([apply_gradient_op, loss_average_op]):
         train_op = tf.no_op('train_op')
 
     # Add histograms for trainable variables.
@@ -64,7 +67,10 @@ def build_train(net, gt_cls_label, gt_bbox, config):
             summaries.add(tf.summary.histogram(var.op.name + '/gradients', grad))
 
     summary_op = tf.summary.merge(list(summaries), name='summary_op')
-    debug = {'total_loss': total_loss}
+    debug = {
+        'total_loss': total_loss,
+        'bbox_loss': bbox_loss,
+    }
     return train_op, summary_op, debug
 
 
@@ -81,7 +87,7 @@ def train_from_scratch():
             return {image_ph: image, label_ph: label, bbox_ph: bbox}
 
         global_step = tf.train.get_or_create_global_step()
-        mm = model.Model(image_ph, config['input_size'], config['roi_size'])
+        mm = model.Model(image_ph, config['input_size'])
         train_op, summary_op, debug = build_train(mm, label_ph, bbox_ph, config)
         data = inputs.load_training_data('dermis', config)
 
@@ -90,14 +96,13 @@ def train_from_scratch():
         writer = tf.summary.FileWriter(config['train_dir'], graph=g)
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            for i in range(n_steps_for_train):
-                image, label, bbox = data[i % config['n_examples_for_train']]
+            for i, (image, label, bbox) in enumerate(data.train_batch(config['n_epochs_for_train'])):
                 # image, label, bbox = data[0]
                 feed_dict = build_feed_dict(image, label, bbox)
-                loss_val, bbox_val, _ = sess.run([debug['total_loss'], mm.endpoints['bbox'], train_op], feed_dict=feed_dict)
+                ops = [debug['bbox_loss'], debug['total_loss'], train_op]
+                bbox_loss_val, total_loss_val, _ = sess.run(ops, feed_dict=feed_dict)
                 if i % config['log_every'] == 0:
-                    logger.info('step %i, loss %.3f' % (i, loss_val))
-                    logger.info('bbox_gt %r, bbox_pred %r' % (bbox, bbox_val))
+                    logger.info('step {:<5} bbox_loss {:.5f}, total_loss {:.3f}'.format(i, bbox_loss_val, total_loss_val))
 
                 if i % config['checkpoint_every'] == 0:
                     utils.save_model(saver, config)

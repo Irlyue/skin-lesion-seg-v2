@@ -33,17 +33,31 @@ class Model:
             bbox = utils.bbox_transform(fc6, input_size[0], name='bbox')
 
         with tf.name_scope('segmentation'):
-            score = net.conv2d(self.net.endpoints['conv5'],
-                               scope='conv6',
-                               n_filters=128,
-                               stride=1,
-                               ksize=(3, 3),
-                               activation_fn=None)
+            score4 = net.conv2d(self.net.endpoints['conv4'],
+                                scope='score4',
+                                n_filters=2,
+                                stride=1,
+                                ksize=(1, 1),
+                                activation_fn=None)
+            up_score4 = utils.up_score_layer(score4,
+                                             scope='up_score4',
+                                             shape=tf.shape(self.net.endpoints['conv3']),
+                                             num_classes=2,
+                                             ksize=4,
+                                             stride=2)
+            score3 = net.conv2d(self.net.endpoints['conv3'],
+                                scope='score3',
+                                n_filters=2,
+                                stride=1,
+                                ksize=(1, 1),
+                                activation_fn=None)
+            fuse_score3 = tf.add(score3, up_score4, name='fuse_score3')
+            score = fuse_score3
             up_score = utils.up_score_layer(score,
                                             shape=[1, *input_size, 2],
                                             num_classes=2,
-                                            ksize=64,
-                                            stride=32)
+                                            ksize=16,
+                                            stride=8)
             roi = utils.crop_bbox(up_score, bbox, limit=input_size)
             lesion_prob = tf.nn.softmax(roi, name='lesion_prob')
             lesion_mask = tf.expand_dims(tf.argmax(roi, axis=3), axis=-1, name='lesion_mask')
