@@ -14,7 +14,7 @@ logger = utils.get_default_logger()
 
 def test_model():
     image = tf.placeholder(dtype=tf.uint8, name='images', shape=config['input_size'] + [3])
-    mm = model.Model(image, config['input_size'])
+    mm = model.Model(image, config['input_size'], config['roi_size'])
     logger.info(mm)
 
 
@@ -48,6 +48,6 @@ def test_evaluation():
 
 
 if __name__ == '__main__':
-    test_evaluation()
-    # test_model()
+    # test_evaluation()
+    test_model()
     # test_huber_loss()

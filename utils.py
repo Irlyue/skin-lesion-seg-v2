@@ -154,6 +154,45 @@ def bbox_transform(x, size, name=None):
     return x
 
 
+def crop_bbox(x, pos, limit=None, scope='crop_box'):
+    """
+    Crop a bounding-box from image(s).
+
+    :param x: tf.Tensor, giving the image(s) to be cropped
+    :param pos: tuple or list, with shape(4,) giving the position(top, left, height, width)
+    :param limit: tuple or list, with shape(2,) giving the limited bounding of cropped region. If none,
+    ignore it and may raise error during runtime.
+    :param scope: str, optional parameter.
+    :return:
+       image: tf.Tensor, the cropped image region
+    """
+    with tf.name_scope(scope):
+        top, left, height, width = pos[0], pos[1], pos[2], pos[3]
+        if limit:
+            bottom, right = limit
+            height = tf.cond(top + height < bottom, true_fn=lambda: height, false_fn=lambda: (bottom - top))
+            width = tf.cond(left + width < right, true_fn=lambda: width, false_fn=lambda: (right - left))
+        return tf.image.crop_to_bounding_box(x, top, left, height, width)
+
+
+def crop_bbox_and_resize(x, pos, size,
+                         scope='crop_and_resize',
+                         limit=None,
+                         method=tf.image.ResizeMethod.BILINEAR):
+    """
+    :param x:
+    :param pos:
+    :param size:
+    :param limit:
+    :param method:
+    :return:
+    """
+    with tf.name_scope(scope):
+        image = crop_bbox(x, pos, limit=limit, scope=scope)
+        image = tf.image.resize_images(image, size=size, method=method)
+        return image
+
+
 def reversed_bbox_transform(x, size, name=None):
     x = tf.reshape(x, shape=(-1,), name=name)
     x = tf.cast(x, dtype=tf.float32)
