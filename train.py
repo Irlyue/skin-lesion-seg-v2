@@ -10,6 +10,7 @@ logger = utils.get_default_logger()
 
 
 def build_train(net, gt_cls_label, gt_bbox, config):
+    logger.info("Building training operations...")
     summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
     global_step = tf.train.get_or_create_global_step()
     transformed_gt_bbox = utils.reversed_bbox_transform(gt_bbox, config['input_size'][0])
@@ -80,21 +81,22 @@ def build_train(net, gt_cls_label, gt_bbox, config):
 
 
 def train_from_scratch():
+    logger.info('Training from scratch...')
+    config = utils.load_config()
+    n_steps_for_train = utils.calc_training_steps(config['n_epochs_for_train'], config['batch_size'],
+                                                  config['n_examples_for_train'])
     with tf.Graph().as_default() as g:
-        logger.info('Training from scratch...')
-        config = utils.load_config()
-        n_steps_for_train = utils.calc_training_steps(config['n_epochs_for_train'],
-                                                      config['batch_size'],
-                                                      config['n_examples_for_train'])
         image_ph, label_ph, bbox_ph = model.model_placeholder(config)
 
-        def build_feed_dict(image, label, bbox):
-            return {image_ph: image, label_ph: label, bbox_ph: bbox}
+        def build_feed_dict(image_, label_, bbox_):
+            return {image_ph: image_, label_ph: label_, bbox_ph: bbox_}
 
         global_step = tf.train.get_or_create_global_step()
         mm = model.Model(image_ph, config['input_size'])
         train_op, summary_op, debug = build_train(mm, label_ph, bbox_ph, config)
-        data = inputs.load_training_data('dermis', config)
+
+        data = inputs.load_training_data(config['database'], config)
+        logger.info('Done loading data set `%s`, %i examples in total' % (config['database'], len(data)))
 
         utils.create_and_delete_if_exists(config['train_dir'])
         saver = tf.train.Saver()
@@ -107,13 +109,17 @@ def train_from_scratch():
                 ops = [debug['bbox_loss'], debug['total_loss'], train_op]
                 bbox_loss_val, total_loss_val, _ = sess.run(ops, feed_dict=feed_dict)
                 if i % config['log_every'] == 0:
-                    logger.info('step {:<5} bbox_loss {:.5f}, total_loss {:.3f}'.format(i, bbox_loss_val, total_loss_val))
+                    fmt = 'step {:>5}/{} bbox_loss {:.5f}, total_loss {:.5f}'
+                    logger.info(fmt.format(i, n_steps_for_train, bbox_loss_val, total_loss_val))
 
                 if i % config['checkpoint_every'] == 0:
                     utils.save_model(saver, config)
+                    logger.info('Model saved at step-%i' % sess.run(global_step))
 
-                if i % config['save_summary_every'] == 0:
+                if config['save_summary_every'] and i % config['save_summary_every'] == 0:
                     utils.add_summary(writer, summary_op, feed_dict)
+                    logger.info('Summary saved at step-%i' % sess.run(global_step))
+
             save_path = utils.save_model(saver, config)
             logger.info('Done training, model saved at %s' % (save_path,))
 
