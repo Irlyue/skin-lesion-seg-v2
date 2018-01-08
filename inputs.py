@@ -20,6 +20,13 @@ class SkinData:
     def __getitem__(self, idx):
         return self.images[idx], self.labels[idx], self.bboxs[idx]
 
+    def __add__(self, other):
+        images = self.images + other.images
+        labels = self.labels + other.labels
+        bboxs = self.bboxs + other.bboxs
+        listing = self.listing + other.listing
+        return SkinData(images, labels, bboxs, listing)
+
     def train_batch(self, n_epochs=1, random=True):
         n_examples = len(self.listing)
         max_steps = len(self.listing) * n_epochs
