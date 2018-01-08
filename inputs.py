@@ -12,6 +12,9 @@ class SkinData:
         self.bboxs = bboxs
         self.listing = listing
 
+    def __len__(self):
+        return len(self.images)
+
     def __getitem__(self, idx):
         return self.images[idx], self.labels[idx], self.bboxs[idx]
 
