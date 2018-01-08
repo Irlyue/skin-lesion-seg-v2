@@ -9,6 +9,26 @@ from crf import crf_post_process
 logger = utils.get_default_logger()
 
 
+class EvalModel:
+    def __init__(self, config):
+        global_step = tf.train.get_or_create_global_step()
+        self.image, _, _ = model.model_placeholder(config)
+        self.model = model.Model(self.image, config['input_size'])
+        self.session = tf.Session().__enter__()
+        saver = tf.train.Saver()
+        utils.load_model(saver, config)
+        logger.info('Model-%i restored successfully!' % self.session.run(global_step,))
+
+    def inference(self, image, ops):
+        if type(ops[0]) == str:
+            ops = [self.model.endpoints[key] for key in ops]
+        feed_dict = self._build_feed_dict(image)
+        return self.session.run(ops, feed_dict)
+
+    def _build_feed_dict(self, image):
+        return {self.image: image}
+
+
 def inference_one_image_from_prob(image):
     config = utils.load_config()
     with tf.Graph().as_default():
