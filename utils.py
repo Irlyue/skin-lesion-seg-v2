@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import pickle
 import logging
 import numpy as np
 import logging.config
@@ -43,6 +44,21 @@ def get_default_logger():
 ##################################################################
 #                       file utilities                           #
 ##################################################################
+def dump_obj(path, obj):
+    with open(path, 'wb') as f:
+        pickle.dump(obj, f)
+
+
+def load_obj(path):
+    with open(path, 'rb') as f:
+        return pickle.load(f)
+
+
+def create_if_not_exists(path):
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+
 def delete_if_exists(path):
     if tf.gfile.Exists(path):
         tf.gfile.DeleteRecursively(path)
@@ -72,7 +88,6 @@ def draw_bbox(image, box, name='bounding_box'):
     box = tf.stack([y_min, x_min, y_max, x_max])
     boxes = tf.expand_dims(box, axis=0)
     boxes = tf.expand_dims(boxes, axis=0)
-    print(boxes.shape)
     return tf.image.draw_bounding_boxes(image, boxes, name=name)
 
 
