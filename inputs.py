@@ -1,5 +1,6 @@
 import os
 import utils
+import tempfile
 import numpy as np
 
 from scipy.misc import imread, imresize
@@ -60,16 +61,21 @@ def get_image_list(data_dir, db):
 
 
 def load_one_database(data_dir, db):
-    images = []
-    labels = []
-    melanoma, not_melanoma = get_image_list(data_dir, db)
-    all_files = melanoma + not_melanoma
-    for item in all_files:
-        image_path = item + '_orig.jpg'
-        label_path = item + '_contour.png'
-        image = imread(image_path)
-        label = imread(label_path)
-        label[label == 255] = 1
-        images.append(image)
-        labels.append(label)
+    cache_path = os.path.join(tempfile.gettempdir(), db + '.pkl')
+    if os.path.exists(cache_path):
+        images, labels, all_files = utils.load_obj(cache_path)
+    else:
+        images = []
+        labels = []
+        melanoma, not_melanoma = get_image_list(data_dir, db)
+        all_files = melanoma + not_melanoma
+        for item in all_files:
+            image_path = item + '_orig.jpg'
+            label_path = item + '_contour.png'
+            image = imread(image_path)
+            label = imread(label_path)
+            label[label == 255] = 1
+            images.append(image)
+            labels.append(label)
+        utils.dump_obj(cache_path, (images, labels, all_files))
     return images, labels, all_files
