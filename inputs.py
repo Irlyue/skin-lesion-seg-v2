@@ -4,6 +4,7 @@ import tempfile
 import numpy as np
 
 from scipy.misc import imread, imresize
+from sklearn.model_selection import KFold
 
 
 class SkinData:
@@ -79,3 +80,28 @@ def load_one_database(data_dir, db):
             labels.append(label)
         utils.dump_obj(cache_path, (images, labels, all_files))
     return images, labels, all_files
+
+
+def get_kth_fold(data, k, n_folds, seed=None, type_='train'):
+    """
+    Function for k-fold cross-validation.
+
+    :param data: SkinData, the data source to split
+    :param k: int, k-th fold
+    :param n_folds: int, number of splits
+    :param seed: int, optional, whether to shuffle the input data before split
+    :param type_: str, either 'train' or 'test', specifying the split indexes to return
+    :return:
+        result: SkinData, k-th fold data
+    """
+    assert type_ == 'train' or type_ == 'test', "Choose from 'train' or 'test' for parameter `type_`"
+    shuffle = (seed is not None)
+    kf = KFold(n_splits=n_folds, random_state=seed, shuffle=shuffle)
+    train_idx, test_idx = list(kf.split(data))[k]
+    idx = train_idx if type_ == 'train' else test_idx
+    images = [data.images[i] for i in idx]
+    labels = [data.labels[i] for i in idx]
+    bboxs = [data.bboxs[i] for i in idx]
+    listing = [data.listing[i] for i in idx]
+    # return idx
+    return SkinData(images, labels, bboxs, listing)
