@@ -63,6 +63,19 @@ def load_config(path=None):
 ###################################################################
 #                        tf utilities                             #
 ###################################################################
+def draw_bbox(image, box, name='bounding_box'):
+    top, left, height, width = box[0, 0], box[0, 1], box[0, 2], box[0, 3]
+    y_min = top
+    x_min = left
+    y_max = top + height
+    x_max = left + width
+    box = tf.stack([y_min, x_min, y_max, x_max])
+    boxes = tf.expand_dims(box, axis=0)
+    boxes = tf.expand_dims(boxes, axis=0)
+    print(boxes.shape)
+    return tf.image.draw_bounding_boxes(image, boxes, name=name)
+
+
 def huber_loss(x, delta=1.0, scope='huber_loss'):
     with tf.name_scope(scope):
         flag = tf.abs(x) < delta

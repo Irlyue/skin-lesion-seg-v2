@@ -16,17 +16,22 @@ def build_train(net, gt_cls_label, gt_bbox, config):
     bbox_loss = tf.reduce_sum(utils.huber_loss(tf.cast(transformed_gt_bbox - net.endpoints['fc6'], dtype=tf.float32)),
                               name='bbox_loss')
 
+    bbox_images = utils.draw_bbox(net.endpoints['images'], net.endpoints['fc6'])
+    summaries.add(tf.summary.image('prediction/bbox', bbox_images))
+
     gt_cls_label = tf.expand_dims(gt_cls_label, axis=0)
     gt_cls_label = tf.expand_dims(gt_cls_label, axis=-1)
     label_for_summary = tf.cast(gt_cls_label, tf.float32)
     summaries.add(tf.summary.image('gt/images', net.endpoints['images']))
     summaries.add(tf.summary.image('gt/labels', tf.cast(label_for_summary, tf.float32)))
+
+    bbox = net.endpoints['bbox']
+    roi_label = utils.crop_bbox(gt_cls_label, bbox, limit=config['input_size'])
+    summaries.add(tf.summary.image('roi/labels', tf.cast(roi_label, dtype=tf.float32)))
+
     if config['lambda'] is None:
-        seg_loss = 0.0
+        seg_loss = tf.constant(0.0, dtype=tf.float32, name='seg_loss')
     else:
-        bbox = net.endpoints['bbox']
-        roi_label = utils.crop_bbox(gt_cls_label, bbox, limit=config['input_size'])
-        summaries.add(tf.summary.image('roi/labels', tf.cast(roi_label, dtype=tf.float32)))
         summaries.add(tf.summary.image('roi/predictions', tf.cast(net.endpoints['lesion_mask'], dtype=tf.float32)))
         seg_loss = tf.losses.sparse_softmax_cross_entropy(logits=net.endpoints['roi'],
                                                           labels=roi_label)
