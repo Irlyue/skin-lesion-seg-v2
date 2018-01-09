@@ -241,6 +241,20 @@ def resize_label(x, size):
 ###################################################################
 #                        image utilities                          #
 ###################################################################
+def aug_image(image, label, bbox):
+    def randint(low, high):
+        return np.random.randint(low, high)
+
+    h, w, _ = image.shape
+    top, left, height, width = bbox
+    new_top = randint(0, top + 1)
+    new_left = randint(0, left + 1)
+    new_bottom = randint(top + height, h)
+    new_right = randint(left + width, w)
+    new_image = image[new_top:new_bottom, new_left:new_right]
+    new_label = label[new_top:new_bottom, new_left:new_right]
+    return new_image, new_label
+
 def calc_bbox(label, gap=5):
     """
     Calculate the bounding box given the ground truth label.
