@@ -25,8 +25,12 @@ class Model:
         logger.info('Building model graph...')
         self.net = net.FCN(image)
         with tf.name_scope('bbox'):
-            conv5_flatten = tf.reshape(self.net.endpoints['conv5'], shape=(1, -1))
-            fc6 = slim.fully_connected(conv5_flatten,
+            conv6 = slim.conv2d(self.net.endpoints['conv5'],
+                                num_outputs=64,
+                                kernel_size=(5, 5),
+                                stride=1)
+            conv6_flatten = tf.reshape(conv6, shape=(1, -1))
+            fc6 = slim.fully_connected(conv6_flatten,
                                        num_outputs=4,
                                        activation_fn=tf.nn.sigmoid,
                                        scope='fc6')

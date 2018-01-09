@@ -36,7 +36,7 @@ class SkinData:
             if random:
                 idx = np.random.randint(n_examples)
             else:
-                idx = i
+                idx = i % n_examples
             new_image, new_label = utils.aug_image(*self[idx])
             new_image = imresize(new_image, size=input_size)
             new_label = imresize(new_label, size=input_size, interp='nearest')

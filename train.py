@@ -83,8 +83,14 @@ def build_train(net, gt_cls_label, gt_bbox, config):
 def train_from_scratch():
     logger.info('Training from scratch...')
     config = utils.load_config()
+    data = inputs.load_raw_data(config['database'], config)
+    dermis_data = inputs.load_raw_data('dermis', config)
+    data = data + dermis_data
+    n_examples_for_train = len(data)
     n_steps_for_train = utils.calc_training_steps(config['n_epochs_for_train'], config['batch_size'],
-                                                  config['n_examples_for_train'])
+                                                  n_examples_for_train)
+
+    config['n_examples_for_train'] = n_examples_for_train
     with tf.Graph().as_default() as g:
         image_ph, label_ph, bbox_ph = model.model_placeholder(config)
 
@@ -95,7 +101,6 @@ def train_from_scratch():
         mm = model.Model(image_ph, config['input_size'])
         train_op, summary_op, debug = build_train(mm, label_ph, bbox_ph, config)
 
-        data = inputs.load_training_data(config['database'], config)
         logger.info('Done loading data set `%s`, %i examples in total' % (config['database'], len(data)))
 
         utils.create_and_delete_if_exists(config['train_dir'])
@@ -103,7 +108,7 @@ def train_from_scratch():
         writer = tf.summary.FileWriter(config['train_dir'], graph=g)
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            for i, (image, label, bbox) in enumerate(data.train_batch(config['n_epochs_for_train'])):
+            for i, (image, label, bbox) in enumerate(data.aug_train_batch(config, random=False)):
                 # image, label, bbox = data[0]
                 feed_dict = build_feed_dict(image, label, bbox)
                 ops = [debug['bbox_loss'], debug['total_loss'], train_op]
