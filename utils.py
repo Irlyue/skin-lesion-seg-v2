@@ -41,6 +41,12 @@ def get_default_logger():
     return DEFAULT_LOGGER
 
 
+def get_config_for_kfold(config, **kwargs):
+    copy = config.copy()
+    copy.update(kwargs)
+    return copy
+
+
 ##################################################################
 #                       file utilities                           #
 ##################################################################
