@@ -243,6 +243,8 @@ def resize_label(x, size):
 ###################################################################
 def aug_image(image, label, bbox):
     def randint(low, high):
+        if low == high:
+            return low
         return np.random.randint(low, high)
 
     h, w, _ = image.shape
@@ -254,6 +256,7 @@ def aug_image(image, label, bbox):
     new_image = image[new_top:new_bottom, new_left:new_right]
     new_label = label[new_top:new_bottom, new_left:new_right]
     return new_image, new_label
+
 
 def calc_bbox(label, gap=5):
     """
@@ -268,19 +271,19 @@ def calc_bbox(label, gap=5):
     top, left, height, width = -1, -1, -1, -1
     for i in range(h):
         if any(label[i] == 1):
-            top = i - gap
+            top = max(0, i - gap)
             break
     for i in reversed(range(h)):
         if any(label[i] == 1):
-            bottom = i + gap
+            bottom = min(h - 1, i + gap)
             break
     for i in range(w):
         if any(label[:, i] == 1):
-            left = i - gap
+            left = max(0, i - gap)
             break
     for i in reversed(range(w)):
         if any(label[:, i] == 1):
-            right = i + gap
+            right = min(w - 1, i + gap)
             break
     height = bottom - top + 1
     width = right - left + 1

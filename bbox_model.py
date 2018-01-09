@@ -18,7 +18,7 @@ def model_placeholder(config):
 
 
 class Model:
-    def __init__(self, image, input_size):
+    def __init__(self, image, input_size, prep_func=net.prep_image_two):
         """
         :param image: tf.placeholder or tf.Tensor, one single image with shape(None, None, 3) and dtype=tf.uint8
         :param input_size: list or tuple,
@@ -26,7 +26,7 @@ class Model:
         self.input_size = input_size
         logger.info('Building model graph...')
         with tf.name_scope('image_prep'):
-            images = net.prep_image(image)
+            images = prep_func(image, input_size)
 
         with tf.name_scope('FCN'):
             conv1 = net.conv2d(images, 16, 'conv1', ksize=(5, 5), stride=(4, 4))
@@ -43,6 +43,7 @@ class Model:
                                        num_outputs=4,
                                        activation_fn=tf.nn.sigmoid,
                                        scope='fc7')
+            bbox_fc = fc7
             bbox = utils.bbox_transform(fc7, input_size[0], name='bbox')
 
         endpoints = OrderedDict()
@@ -54,6 +55,7 @@ class Model:
         endpoints['conv5'] = conv5
         endpoints['fc6'] = fc6
         endpoints['fc7'] = fc7
+        endpoints['bbox_fc'] = bbox_fc
         endpoints['bbox'] = bbox
         self.endpoints = endpoints
 

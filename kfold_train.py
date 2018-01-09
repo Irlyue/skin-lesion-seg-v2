@@ -3,6 +3,7 @@ import model
 import train
 import utils
 import inputs
+import bbox_model
 import tensorflow as tf
 
 
@@ -12,8 +13,8 @@ logger = utils.get_default_logger()
 def kfold_training():
     logger.info('K-fold training...')
     config = utils.load_config()
-    dermis = inputs.load_training_data('dermis', config)
-    dermquest = inputs.load_training_data('dermquest', config)
+    dermis = inputs.load_raw_data('dermis', config)
+    dermquest = inputs.load_raw_data('dermquest', config)
     n_folds = config['n_folds']
 
     for i in range(n_folds):
@@ -43,14 +44,14 @@ def train_one_fold(data, config):
             return {image_ph: image_, label_ph: label_, bbox_ph: bbox_}
 
         global_step = tf.train.get_or_create_global_step()
-        mm = model.Model(image_ph, config['input_size'])
+        mm = bbox_model.Model(image_ph, config['input_size'])
         train_op, summary_op, debug = train.build_train(mm, label_ph, bbox_ph, config)
 
         saver = tf.train.Saver()
         writer = tf.summary.FileWriter(config['train_dir'], graph=g)
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            for i, (image, label, bbox) in enumerate(data.train_batch(n_epochs_for_train)):
+            for i, (image, label, bbox) in enumerate(data.aug_train_batch(config)):
                 feed_dict = build_feed_dict(image, label, bbox)
                 ops = [debug['bbox_loss'], debug['total_loss'], train_op]
                 bbox_loss_val, total_loss_val, _ = sess.run(ops, feed_dict)

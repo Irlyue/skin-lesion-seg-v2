@@ -3,6 +3,7 @@ import math
 import model
 import utils
 import inputs
+import bbox_model
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
@@ -14,10 +15,10 @@ def build_train(net, gt_cls_label, gt_bbox, config):
     summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
     global_step = tf.train.get_or_create_global_step()
     transformed_gt_bbox = utils.reversed_bbox_transform(gt_bbox, config['input_size'][0])
-    bbox_loss = tf.reduce_sum(utils.huber_loss(tf.cast(transformed_gt_bbox - net.endpoints['fc6'], dtype=tf.float32)),
+    bbox_loss = tf.reduce_sum(utils.huber_loss(tf.cast(transformed_gt_bbox - net.endpoints['bbox_fc'], dtype=tf.float32)),
                               name='bbox_loss')
 
-    bbox_images = utils.draw_bbox(net.endpoints['images'], net.endpoints['fc6'])
+    bbox_images = utils.draw_bbox(net.endpoints['images'], net.endpoints['bbox_fc'])
     summaries.add(tf.summary.image('prediction/bbox', bbox_images))
 
     gt_cls_label = tf.expand_dims(gt_cls_label, axis=0)
@@ -83,9 +84,15 @@ def build_train(net, gt_cls_label, gt_bbox, config):
 def train_from_scratch():
     logger.info('Training from scratch...')
     config = utils.load_config()
-    data = inputs.load_raw_data(config['database'], config)
-    dermis_data = inputs.load_raw_data('dermis', config)
-    data = data + dermis_data
+    # data = inputs.load_raw_data(config['database'], config)
+    # dermis_data = inputs.load_raw_data('dermis', config)
+    # data = data + dermis_data
+    dermis = inputs.load_raw_data('dermis', config)
+    dermquest = inputs.load_raw_data('dermquest', config)
+    kfold_train_data = inputs.get_kth_fold(dermquest, 0, config['n_folds'],
+                                           seed=config['split_seed'])
+    data = dermis + kfold_train_data
+
     n_examples_for_train = len(data)
     n_steps_for_train = utils.calc_training_steps(config['n_epochs_for_train'], config['batch_size'],
                                                   n_examples_for_train)
@@ -98,7 +105,7 @@ def train_from_scratch():
             return {image_ph: image_, label_ph: label_, bbox_ph: bbox_}
 
         global_step = tf.train.get_or_create_global_step()
-        mm = model.Model(image_ph, config['input_size'])
+        mm = bbox_model.Model(image_ph, config['input_size'])
         train_op, summary_op, debug = build_train(mm, label_ph, bbox_ph, config)
 
         logger.info('Done loading data set `%s`, %i examples in total' % (config['database'], len(data)))

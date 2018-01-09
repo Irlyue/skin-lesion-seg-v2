@@ -1,6 +1,7 @@
 import utils
 import model
 import inputs
+import bbox_model
 import evaluation
 import numpy as np
 import tensorflow as tf
@@ -30,6 +31,12 @@ def test_huber_loss():
     plt.show()
 
 
+def test_bbox_model():
+    image = tf.placeholder(dtype=tf.uint8, name='images', shape=config['input_size'] + [3])
+    mm = bbox_model.Model(image, config['input_size'])
+    logger.info(mm)
+
+
 def test_evaluation():
     data = inputs.load_training_data('dermis', config)
     image, label, bbox = data[1]
@@ -51,6 +58,7 @@ def test_evaluation():
 
 
 if __name__ == '__main__':
-    test_evaluation()
+    test_bbox_model()
+    # test_evaluation()
     # test_model()
     # test_huber_loss()

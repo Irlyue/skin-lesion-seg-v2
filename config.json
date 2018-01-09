@@ -6,7 +6,7 @@
   "data_dir": "/home/tlw/datasets/skin-lesion",
   "train_dir": "train/",
   "database":"dermquest",
-  "n_epochs_for_train": 50,
+  "n_epochs_for_train": 80,
   "n_epochs_per_decay": 20,
   "split_seed": 0,
   "n_folds": 4,
@@ -16,6 +16,6 @@
   "save_summary_every": null,
   "save_summaries_secs": 10,
   "batch_size": 1,
-  "learning_rate": 1e-4,
+  "learning_rate": 2e-4,
   "gt_prob": 0.8
 }

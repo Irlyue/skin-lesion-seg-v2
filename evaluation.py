@@ -1,20 +1,23 @@
 import crf
 import model
 import utils
+import bbox_model
 import numpy as np
 import tensorflow as tf
 
 from crf import crf_post_process
+from net import prep_image_for_test
 
 
 logger = utils.get_default_logger()
 
 
-class EvalModel:
-    def __init__(self, config):
+class EvalModelAbstract:
+    def __init__(self):
+        pass
+
+    def load_self(self, config):
         global_step = tf.train.get_or_create_global_step()
-        self.image, _, _ = model.model_placeholder(config)
-        self.model = model.Model(self.image, config['input_size'])
         self.session = tf.Session().__enter__()
         saver = tf.train.Saver()
         utils.load_model(saver, config)
@@ -28,6 +31,23 @@ class EvalModel:
 
     def _build_feed_dict(self, image):
         return {self.image: image}
+
+
+class EvalModel(EvalModelAbstract):
+    def __init__(self, config):
+        super().__init__()
+        self.image, _, _ = model.model_placeholder(config)
+        self.model = model.Model(self.image, config['input_size'])
+        self.load_self(config)
+
+
+class EvalBboxModel(EvalModelAbstract):
+    def __init__(self, config):
+        super().__init__()
+        self.image, _, _ = model.model_placeholder(config)
+        self.model = bbox_model.Model(self.image, config['input_size'],
+                                      prep_func=prep_image_for_test)
+        self.load_self(config)
 
 
 def inference_one_image_from_prob(image):

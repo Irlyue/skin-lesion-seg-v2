@@ -80,3 +80,46 @@ def crf_from_bbox(image, bbox, gt_prob, n_steps=5):
     unary = get_unary_term(label_guess, unary_from='label', n_classes=2, gt_prob=gt_prob)
     result = crf_post_process(image, unary, n_steps=n_steps)
     return result
+
+
+def crf_from_bbox_circle(image, bbox, n_steps=5):
+    """
+
+    :param image:
+    :param bbox:
+    :param n_steps:
+    :return:
+    """
+    h, w, _ = image.shape
+    probs = prob_from_bbox((h, w), bbox)
+
+    unary = get_unary_term(probs)
+    result = crf_post_process(image, unary, n_steps=n_steps)
+    return result
+
+
+def prob_from_bbox(shape, bbox):
+    def dist(pa, pb):
+        xa, ya = pa
+        xb, yb = pb
+        return np.sqrt((xa - xb)**2 + (ya - yb)**2)
+
+    height, width = shape
+    top, left, bh, bw = bbox
+    center_h, center_w = top + bh // 2, left + bw // 2
+    center = center_h, center_w
+
+    # radius_in = dist(center, (top, left))
+    radius_in = min(bh, bw) // 2
+    radius_out = min(center_h, height - center_h, center_w, width - center_w)
+
+    p1 = np.zeros(shape)
+    for i in range(height):
+        for j in range(width):
+            dij = dist(center, (i, j))
+            if dij < radius_in:
+                p1[i, j] = 1.0
+    p0 = 1 - p1
+    probs = np.stack([p0, p1], axis=2)
+    return probs
+
