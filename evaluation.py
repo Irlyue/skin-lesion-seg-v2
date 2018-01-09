@@ -1,3 +1,4 @@
+import crf
 import model
 import utils
 import numpy as np
@@ -78,3 +79,29 @@ def inference_image(net, feed_dict):
     bbox, = sess.run([net.endpoints['bbox']], feed_dict)
     return bbox,
 
+
+def evaluate_one_model(mm, data, config):
+    gt_prob = config['gt_prob']
+    result = {
+        'TP': 0,
+        'TN': 0,
+        'FP': 0,
+        'FN': 0
+    }
+    n_examples_for_test = len(data)
+    logger.info('Evaluating %d examples in total...' % n_examples_for_test)
+
+    def update_dict(target, to_update):
+        for key in to_update:
+            target[key] += to_update[key]
+
+    def inference_bbox(mm, image_):
+        return mm.inference(image_, ['bbox'])[0]
+
+    for i, (image, label, _) in enumerate(data):
+        bbox_pred = inference_bbox(mm, image)
+        bbox_crf_result_i = crf.crf_from_bbox(image, bbox_pred, gt_prob)
+        result_i = utils.count_many(bbox_crf_result_i, label)
+        update_dict(result, result_i)
+    result.update(utils.metric_many_from_counter(result))
+    return result
