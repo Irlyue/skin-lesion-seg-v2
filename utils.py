@@ -354,3 +354,40 @@ def metric_many_from_counter(result):
 def metric_many_from_predictions(predictions, labels):
     result = count_many(predictions, labels)
     return metric_many_from_counter(result)
+
+
+def calc_bbox_iou(box_a, box_b):
+    """
+    Calculate the Intersection over Union metric of bounding-box prediction.
+
+    :param box_a: tuple or list, giving(top, left, height, bottom)
+    :param box_b: same as box_a
+    :return:
+        iou: float,
+    """
+    def bbox_transform_fn(box):
+        top, left, height, width = box
+        bottom = top + height
+        right = left + width
+        return top, left, bottom, right
+
+    def calc_bbox_area(box):
+        top, left, bottom, right = box
+        if top > bottom or left > right:
+            return 0.0
+        return (bottom - top + 1) * (right - left + 1)
+
+    box_a = bbox_transform_fn(box_a)
+    box_b = bbox_transform_fn(box_b)
+
+    in_top = max(box_a[0], box_b[0])
+    in_left = max(box_a[1], box_b[1])
+    in_bottom = min(box_a[2], box_b[2])
+    in_right = min(box_a[3], box_b[3])
+    in_box = (in_top, in_left, in_bottom, in_right)
+
+    in_area = calc_bbox_area(in_box)
+    box_a_area = calc_bbox_area(box_a)
+    box_b_area = calc_bbox_area(box_b)
+    iou = in_area * 1.0 / (box_a_area + box_b_area - in_area)
+    return iou
