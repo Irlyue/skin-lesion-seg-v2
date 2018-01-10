@@ -87,16 +87,18 @@ def load_config(path=None):
 ###################################################################
 #                        tf utilities                             #
 ###################################################################
-def draw_bbox(image, box, name='bounding_box'):
-    top, left, height, width = box[0, 0], box[0, 1], box[0, 2], box[0, 3]
-    y_min = top
-    x_min = left
-    y_max = top + height
-    x_max = left + width
-    box = tf.stack([y_min, x_min, y_max, x_max])
-    boxes = tf.expand_dims(box, axis=0)
-    boxes = tf.expand_dims(boxes, axis=0)
-    return tf.image.draw_bounding_boxes(image, boxes, name=name)
+def draw_bbox(images, boxes, name='bounding_box'):
+    def box_transform_fn(box):
+        top, left, height, width = box[0], box[1], box[2], box[3]
+        y_min = top
+        x_min = left
+        y_max = top + height
+        x_max = left + width
+        box = tf.stack([y_min, x_min, y_max, x_max])
+        return box
+    boxes = tf.map_fn(box_transform_fn, boxes)
+    boxes = tf.expand_dims(boxes, axis=1)
+    return tf.image.draw_bounding_boxes(images, boxes, name=name)
 
 
 def huber_loss(x, delta=1.0, scope='huber_loss'):
@@ -190,6 +192,21 @@ def bbox_transform(x, size, name=None):
     return x
 
 
+def bbox_in_range(x):
+    """
+    Constraint the bounding-box within the image.
+
+    :param x: tf.Tensor, shape like(batch_size, 4) and value within [0.0, 1.0]
+    :return:
+    """
+    def in_range(pos):
+        top, left, height, width = pos[0], pos[1], pos[2], pos[3]
+        height = tf.cond(top + height < 1.0, true_fn=lambda: height, false_fn=lambda: (1.0 - top))
+        width = tf.cond(left + width < 1.0, true_fn=lambda: width, false_fn=lambda: (1.0 - left))
+        return tf.stack([top, left, height, width])
+    return tf.map_fn(in_range, x)
+
+
 def crop_bbox(x, pos, limit=None, scope='crop_box'):
     """
     Crop a bounding-box from image(s).
@@ -230,9 +247,9 @@ def crop_bbox_and_resize(x, pos, size,
 
 
 def reversed_bbox_transform(x, size, name=None):
-    x = tf.reshape(x, shape=(-1,), name=name)
+    # x = tf.reshape(x, shape=(-1,), name=name)
     x = tf.cast(x, dtype=tf.float32)
-    x = tf.divide(x, size)
+    x = tf.divide(x, size, name=name)
     return x
 
 

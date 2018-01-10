@@ -27,10 +27,23 @@ class SkinData:
         listing = self.listing + other.listing
         return SkinData(images, labels, bboxs, listing)
 
-    def aug_train_batch(self, config, random=True):
+    def aug_train_batch(self, config):
+        batch_size = config['batch_size']
+        batch_images, batch_labels, batch_bboxes = [], [], []
+        for image, label, bbox in self.aug_train_example(config):
+            batch_images.append(image)
+            batch_labels.append(label)
+            batch_bboxes.append(bbox)
+            if len(batch_images) == batch_size:
+                yield np.array(batch_images), np.array(batch_labels), np.array(batch_bboxes)
+                batch_images, batch_labels, batch_bboxes = [], [], []
+
+    def aug_train_example(self, config):
         n_epochs = config['n_epochs_for_train']
-        n_examples = len(self.listing)
         input_size = config['input_size']
+        random = config['random_batch']
+
+        n_examples = len(self.listing)
         max_steps = len(self.listing) * n_epochs
         for i in range(max_steps):
             if random:

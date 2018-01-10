@@ -32,7 +32,7 @@ def test_huber_loss():
 
 
 def test_bbox_model():
-    image = tf.placeholder(dtype=tf.uint8, name='images', shape=config['input_size'] + [3])
+    image = tf.placeholder(dtype=tf.uint8, name='images', shape=(16, 224, 224, 3))
     mm = bbox_model.Model(image, config['input_size'])
     logger.info(mm)
 

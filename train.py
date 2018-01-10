@@ -14,22 +14,23 @@ def build_train(net, gt_cls_label, gt_bbox, config):
     logger.info("Building training operations...")
     summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
     global_step = tf.train.get_or_create_global_step()
+
     transformed_gt_bbox = utils.reversed_bbox_transform(gt_bbox, config['input_size'][0])
-    bbox_loss = tf.reduce_sum(utils.huber_loss(tf.cast(transformed_gt_bbox - net.endpoints['bbox_fc'], dtype=tf.float32)),
-                              name='bbox_loss')
+    huber_losses = utils.huber_loss(tf.cast(transformed_gt_bbox - net.endpoints['bbox_fc'], dtype=tf.float32))
+    bbox_losses = tf.reduce_sum(huber_losses, axis=1)
+    bbox_loss = tf.reduce_mean(bbox_losses, name='bbox_loss')
 
     bbox_images = utils.draw_bbox(net.endpoints['images'], net.endpoints['bbox_fc'])
     summaries.add(tf.summary.image('prediction/bbox', bbox_images))
 
-    gt_cls_label = tf.expand_dims(gt_cls_label, axis=0)
     gt_cls_label = tf.expand_dims(gt_cls_label, axis=-1)
     label_for_summary = tf.cast(gt_cls_label, tf.float32)
     summaries.add(tf.summary.image('gt/images', net.endpoints['images']))
     summaries.add(tf.summary.image('gt/labels', tf.cast(label_for_summary, tf.float32)))
 
     bbox = net.endpoints['bbox']
-    roi_label = utils.crop_bbox(gt_cls_label, bbox, limit=config['input_size'])
-    summaries.add(tf.summary.image('roi/labels', tf.cast(roi_label, dtype=tf.float32)))
+    # roi_label = utils.crop_bbox(gt_cls_label, bbox, limit=config['input_size'])
+    # summaries.add(tf.summary.image('roi/labels', tf.cast(roi_label, dtype=tf.float32)))
 
     if config['lambda'] is None:
         seg_loss = tf.constant(0.0, dtype=tf.float32, name='seg_loss')
@@ -99,7 +100,7 @@ def train_from_scratch():
 
     config['n_examples_for_train'] = n_examples_for_train
     with tf.Graph().as_default() as g:
-        image_ph, label_ph, bbox_ph = model.model_placeholder(config)
+        image_ph, label_ph, bbox_ph = bbox_model.model_placeholder(config)
 
         def build_feed_dict(image_, label_, bbox_):
             return {image_ph: image_, label_ph: label_, bbox_ph: bbox_}
@@ -115,9 +116,9 @@ def train_from_scratch():
         writer = tf.summary.FileWriter(config['train_dir'], graph=g)
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            for i, (image, label, bbox) in enumerate(data.aug_train_batch(config, random=False)):
+            for i, (images, labels, bboxes) in enumerate(data.aug_train_batch(config)):
                 # image, label, bbox = data[0]
-                feed_dict = build_feed_dict(image, label, bbox)
+                feed_dict = build_feed_dict(images, labels, bboxes)
                 ops = [debug['bbox_loss'], debug['total_loss'], train_op]
                 bbox_loss_val, total_loss_val, _ = sess.run(ops, feed_dict=feed_dict)
                 if i % config['log_every'] == 0:
