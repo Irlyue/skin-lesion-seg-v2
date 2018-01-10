@@ -38,7 +38,7 @@ def train_one_fold(data, config):
 
     logger.info('Train one fold for %d steps, %d examples in total.' % (n_steps_for_train, len(data)))
     with tf.Graph().as_default() as g:
-        image_ph, label_ph, bbox_ph = model.model_placeholder(config)
+        image_ph, label_ph, bbox_ph = bbox_model.model_placeholder(config)
 
         def build_feed_dict(image_, label_, bbox_):
             return {image_ph: image_, label_ph: label_, bbox_ph: bbox_}
@@ -51,8 +51,8 @@ def train_one_fold(data, config):
         writer = tf.summary.FileWriter(config['train_dir'], graph=g)
         with tf.Session() as sess:
             tf.global_variables_initializer().run()
-            for i, (image, label, bbox) in enumerate(data.aug_train_batch(config)):
-                feed_dict = build_feed_dict(image, label, bbox)
+            for i, (images, labels, bboxes) in enumerate(data.aug_train_batch(config)):
+                feed_dict = build_feed_dict(images, labels, bboxes)
                 ops = [debug['bbox_loss'], debug['total_loss'], train_op]
                 bbox_loss_val, total_loss_val, _ = sess.run(ops, feed_dict)
                 if i % config['log_every'] == 0:

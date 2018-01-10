@@ -44,7 +44,7 @@ class EvalModel(EvalModelAbstract):
 class EvalBboxModel(EvalModelAbstract):
     def __init__(self, config):
         super().__init__()
-        self.image, _, _ = model.model_placeholder(config)
+        self.image, _, _ = bbox_model.model_placeholder(config)
         self.model = bbox_model.Model(self.image, config['input_size'],
                                       prep_func=prep_image_for_test)
         self.load_self(config)
@@ -119,7 +119,7 @@ def evaluate_one_model(mm, data, config):
         return mm.inference(image_, ['bbox'])[0]
 
     for i, (image, label, _) in enumerate(data):
-        bbox_pred = inference_bbox(mm, image)
+        bbox_pred = inference_bbox(mm, image[None])
         bbox_crf_result_i = crf.crf_from_bbox(image, bbox_pred, gt_prob)
         result_i = utils.count_many(bbox_crf_result_i, label)
         update_dict(result, result_i)

@@ -30,16 +30,10 @@ def prep_image_two(images):
     return images
 
 
-def prep_image_for_test(image, input_size):
-    height, width = input_size
-    image = tf.cast(image, dtype=tf.float32)
+def prep_image_for_test(images):
+    images = tf.cast(images, dtype=tf.float32)
 
-    # Subtract off the mean and divide by the variance of the pixels.
-    float_image = tf.image.per_image_standardization(image)
-
-    # Set the shapes of tensors.
-    float_image.set_shape([height, width, 3])
-    images = tf.expand_dims(float_image, axis=0)
+    images = tf.map_fn(lambda x: tf.image.per_image_standardization(x), images)
     return images
 
 
