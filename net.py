@@ -19,20 +19,14 @@ def prep_image(image):
     return images
 
 
-def prep_image_two(image, input_size):
-    height, width = input_size
-    image = tf.cast(image, dtype=tf.float32)
-    image = tf.image.random_brightness(image,
-                                       max_delta=63)
-    image = tf.image.random_contrast(image,
-                                     lower=0.2, upper=1.8)
+def prep_image_two(images):
+    images = tf.cast(images, dtype=tf.float32)
+    images = tf.image.random_brightness(images, max_delta=63)
+    images = tf.image.random_contrast(images, lower=0.2, upper=1.8)
 
     # Subtract off the mean and divide by the variance of the pixels.
-    float_image = tf.image.per_image_standardization(image)
-
-    # Set the shapes of tensors.
-    float_image.set_shape([height, width, 3])
-    images = tf.expand_dims(float_image, axis=0)
+    # images = tf.image.per_image_standardization(images)
+    images = tf.map_fn(lambda x: tf.image.per_image_standardization(x), images)
     return images
 
 

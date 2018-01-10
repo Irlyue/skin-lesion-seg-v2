@@ -7,6 +7,8 @@ import numpy as np
 import logging.config
 import tensorflow as tf
 
+import tensorflow.contrib.slim as slim
+
 
 class Timer:
     def __init__(self):
@@ -175,7 +177,7 @@ def bbox_transform(x, size, name=None):
     """
     Transform predicted bounding-box back to the wanted size.
 
-    :param x: tf.Tensor, with shape(4,)
+    :param x: tf.Tensor, with shape(batch_size, 4)
     :param size: int, expected bounding-box size
     :param name: str,
     :return:
@@ -184,7 +186,7 @@ def bbox_transform(x, size, name=None):
     x = tf.multiply(x, size)
     x = tf.floor(x)
     x = tf.cast(x, dtype=tf.int32)
-    x = tf.reshape(x, shape=(-1,), name=name)
+    x = slim.flatten(x, scope=name)
     return x
 
 
