@@ -1,0 +1,10 @@
+{
+  "use_dermis": true,
+  "split_seed": 0,
+  "n_folds": 4,
+  "k": 0,
+  "train_csv_file": "./training/data/train.csv",
+  "test_csv_file": "./training/data/test.csv",
+  "train_record_file": "./training/data/train.record",
+  "test_record_file": "./training/data/test.record"
+}
