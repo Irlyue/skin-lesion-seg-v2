@@ -118,10 +118,16 @@ def evaluate_one_model(mm, data, config):
     def inference_bbox(mm, image_):
         return mm.inference(image_, ['bbox'])[0]
 
-    for i, (image, label, _) in enumerate(data):
+    iou = []
+    for i, (image, label, bbox_gt) in enumerate(data):
         bbox_pred = inference_bbox(mm, image[None])[0]
         bbox_crf_result_i = crf.crf_from_bbox(image, bbox_pred, gt_prob)
         result_i = my_utils.count_many(bbox_crf_result_i, label)
         update_dict(result, result_i)
+
+        iou_i = my_utils.calc_bbox_iou(bbox_pred, bbox_gt)
+        iou.append(iou_i)
+
     result.update(my_utils.metric_many_from_counter(result))
+    result['mIoU'] = np.mean(iou)
     return result
