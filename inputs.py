@@ -1,5 +1,5 @@
 import os
-import utils
+import my_utils
 import tempfile
 import numpy as np
 
@@ -50,10 +50,10 @@ class SkinData:
                 idx = np.random.randint(n_examples)
             else:
                 idx = i % n_examples
-            new_image, new_label = utils.aug_image(*self[idx])
+            new_image, new_label = my_utils.aug_image(*self[idx])
             new_image = imresize(new_image, size=input_size)
             new_label = imresize(new_label, size=input_size, interp='nearest')
-            new_bbox = utils.calc_bbox(new_label)
+            new_bbox = my_utils.calc_bbox(new_label)
             yield new_image, new_label, new_bbox
 
     def train_batch(self, n_epochs=1, random=True):
@@ -84,7 +84,7 @@ def load_raw_data(db, config):
 
 
 def calc_bboxs(labels):
-    return [utils.calc_bbox(label) for label in labels]
+    return [my_utils.calc_bbox(label) for label in labels]
 
 
 def get_image_list(data_dir, db):
@@ -100,7 +100,7 @@ def get_image_list(data_dir, db):
 def load_one_database(data_dir, db):
     cache_path = os.path.join(tempfile.gettempdir(), db + '.pkl')
     if os.path.exists(cache_path):
-        images, labels, all_files = utils.load_obj(cache_path)
+        images, labels, all_files = my_utils.load_obj(cache_path)
     else:
         images = []
         labels = []
@@ -114,7 +114,7 @@ def load_one_database(data_dir, db):
             label[label == 255] = 1
             images.append(image)
             labels.append(label)
-        utils.dump_obj(cache_path, (images, labels, all_files))
+        my_utils.dump_obj(cache_path, (images, labels, all_files))
     return images, labels, all_files
 
 

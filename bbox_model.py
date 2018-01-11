@@ -1,12 +1,12 @@
 import net
-import utils
+import my_utils
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
 from collections import OrderedDict
 
 
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 def model_placeholder(config):
@@ -45,8 +45,8 @@ class Model:
                                        num_outputs=4,
                                        activation_fn=tf.nn.sigmoid,
                                        scope='fc7')
-            bbox_fc = utils.bbox_in_range(fc7)
-            bbox = utils.bbox_transform(fc7, input_size[0], name='bbox')
+            bbox_fc = my_utils.bbox_in_range(fc7)
+            bbox = my_utils.bbox_transform(fc7, input_size[0], name='bbox')
 
         endpoints = OrderedDict()
         endpoints['images'] = images

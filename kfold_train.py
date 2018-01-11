@@ -1,18 +1,18 @@
 import os
 import model
 import train
-import utils
+import my_utils
 import inputs
 import bbox_model
 import tensorflow as tf
 
 
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 def kfold_training():
     logger.info('K-fold training...')
-    config = utils.load_config()
+    config = my_utils.load_config()
     dermis = inputs.load_raw_data('dermis', config)
     dermquest = inputs.load_raw_data('dermquest', config)
     n_folds = config['n_folds']
@@ -21,9 +21,9 @@ def kfold_training():
         kfold_data = inputs.get_kth_fold(dermquest, i, n_folds, seed=config['split_seed'])
         train_data = dermis + kfold_data
 
-        kfold_config = utils.get_config_for_kfold(config,
-                                                  train_dir=os.path.join(config['train_dir'], str(i)),
-                                                  n_examples_for_train=len(train_data))
+        kfold_config = my_utils.get_config_for_kfold(config,
+                                                     train_dir=os.path.join(config['train_dir'], str(i)),
+                                                     n_examples_for_train=len(train_data))
         logger.info('Training for %i-th fold data...' % i)
         train_one_fold(train_data, kfold_config)
     logger.info('Done training')
@@ -31,10 +31,10 @@ def kfold_training():
 
 def train_one_fold(data, config):
     n_epochs_for_train = config['n_epochs_for_train']
-    n_steps_for_train = utils.calc_training_steps(n_epochs_for_train,
-                                                  config['batch_size'],
-                                                  config['n_examples_for_train'])
-    utils.delete_if_exists(config['train_dir'])
+    n_steps_for_train = my_utils.calc_training_steps(n_epochs_for_train,
+                                                     config['batch_size'],
+                                                     config['n_examples_for_train'])
+    my_utils.delete_if_exists(config['train_dir'])
 
     logger.info('Train one fold for %d steps, %d examples in total.' % (n_steps_for_train, len(data)))
     with tf.Graph().as_default() as g:
@@ -60,17 +60,17 @@ def train_one_fold(data, config):
                     logger.info(fmt.format(i, n_steps_for_train, bbox_loss_val, total_loss_val))
 
                 if i % config['checkpoint_every'] == 0:
-                    utils.save_model(saver, config)
+                    my_utils.save_model(saver, config)
                     logger.info('Model saved at step-%i' % sess.run(global_step))
 
                 if config['save_summary_every'] and i % config['save_summary_every'] == 0:
-                    utils.add_summary(writer, summary_op, feed_dict)
+                    my_utils.add_summary(writer, summary_op, feed_dict)
                     logger.info('Summary saved at step-%i' % sess.run(global_step))
 
             logger.info('Last bbox_loss %.5f, total_loss %.5f at step-%d' %
                         (bbox_loss_val, total_loss_val, sess.run(global_step)))
 
-            save_path = utils.save_model(saver, config)
+            save_path = my_utils.save_model(saver, config)
             logger.info('Done training, model saved at %s' % (save_path,))
 
 

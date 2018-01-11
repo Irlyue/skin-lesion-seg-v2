@@ -1,6 +1,6 @@
 import crf
 import model
-import utils
+import my_utils
 import bbox_model
 import numpy as np
 import tensorflow as tf
@@ -9,7 +9,7 @@ from crf import crf_post_process
 from net import prep_image_for_test
 
 
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 class EvalModelAbstract:
@@ -20,7 +20,7 @@ class EvalModelAbstract:
         global_step = tf.train.get_or_create_global_step()
         self.session = tf.Session().__enter__()
         saver = tf.train.Saver()
-        utils.load_model(saver, config)
+        my_utils.load_model(saver, config)
         logger.info('Model-%i restored successfully!' % self.session.run(global_step,))
 
     def inference(self, image, ops):
@@ -51,7 +51,7 @@ class EvalBboxModel(EvalModelAbstract):
 
 
 def inference_one_image_from_prob(image):
-    config = utils.load_config()
+    config = my_utils.load_config()
     with tf.Graph().as_default():
         global_step = tf.train.get_or_create_global_step()
         image_ph, _, _ = model.model_placeholder(config)
@@ -62,7 +62,7 @@ def inference_one_image_from_prob(image):
 
         saver = tf.train.Saver()
         with tf.Session() as sess:
-            utils.load_model(saver, config)
+            my_utils.load_model(saver, config)
             logger.info('Model-%i restored successfully!' % sess.run(global_step,))
             ops = [mm.endpoints['bbox'], mm.endpoints['lesion_mask'], mm.endpoints['lesion_prob']]
             bbox, lesion_mask, lesion_prob = sess.run(ops, build_feed_dict(image))
@@ -121,7 +121,7 @@ def evaluate_one_model(mm, data, config):
     for i, (image, label, _) in enumerate(data):
         bbox_pred = inference_bbox(mm, image[None])[0]
         bbox_crf_result_i = crf.crf_from_bbox(image, bbox_pred, gt_prob)
-        result_i = utils.count_many(bbox_crf_result_i, label)
+        result_i = my_utils.count_many(bbox_crf_result_i, label)
         update_dict(result, result_i)
-    result.update(utils.metric_many_from_counter(result))
+    result.update(my_utils.metric_many_from_counter(result))
     return result

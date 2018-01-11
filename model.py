@@ -1,10 +1,10 @@
 import net
-import utils
+import my_utils
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
 
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 def model_placeholder(config):
@@ -34,7 +34,7 @@ class Model:
                                        num_outputs=4,
                                        activation_fn=tf.nn.sigmoid,
                                        scope='fc6')
-            bbox = utils.bbox_transform(fc6, input_size[0], name='bbox')
+            bbox = my_utils.bbox_transform(fc6, input_size[0], name='bbox')
 
         with tf.name_scope('segmentation'):
             score4 = net.conv2d(self.net.endpoints['conv4'],
@@ -43,12 +43,12 @@ class Model:
                                 stride=1,
                                 ksize=(1, 1),
                                 activation_fn=None)
-            up_score4 = utils.up_score_layer(score4,
-                                             scope='up_score4',
-                                             shape=tf.shape(self.net.endpoints['conv3']),
-                                             num_classes=2,
-                                             ksize=4,
-                                             stride=2)
+            up_score4 = my_utils.up_score_layer(score4,
+                                                scope='up_score4',
+                                                shape=tf.shape(self.net.endpoints['conv3']),
+                                                num_classes=2,
+                                                ksize=4,
+                                                stride=2)
             score3 = net.conv2d(self.net.endpoints['conv3'],
                                 scope='score3',
                                 n_filters=2,
@@ -57,12 +57,12 @@ class Model:
                                 activation_fn=None)
             fuse_score3 = tf.add(score3, up_score4, name='fuse_score3')
             score = fuse_score3
-            up_score = utils.up_score_layer(score,
-                                            shape=[1, *input_size, 2],
-                                            num_classes=2,
-                                            ksize=16,
-                                            stride=8)
-            roi = utils.crop_bbox(up_score, bbox, limit=input_size)
+            up_score = my_utils.up_score_layer(score,
+                                               shape=[1, *input_size, 2],
+                                               num_classes=2,
+                                               ksize=16,
+                                               stride=8)
+            roi = my_utils.crop_bbox(up_score, bbox, limit=input_size)
             lesion_prob = tf.nn.softmax(roi, name='lesion_prob')
             lesion_mask = tf.expand_dims(tf.argmax(roi, axis=3), axis=-1, name='lesion_mask')
 

@@ -1,7 +1,7 @@
 import os
 import io
 import sys
-import utils
+import my_utils
 import importlib
 import pandas as pd
 import tensorflow as tf
@@ -12,7 +12,7 @@ from collections import namedtuple
 
 sys.path.append('/home/wenfeng/models/models/research')
 dataset_util = importlib.import_module('object_detection.utils.dataset_util')
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 # TO-DO replace this with label map
@@ -85,7 +85,7 @@ def create_one_record_file(csv_file, output_path):
 
 def main(_):
     logger.info('Creating Tf-record files...')
-    image_config = utils.load_config('./image_config.json')
+    image_config = my_utils.load_config('./image_config.json')
     create_one_record_file(image_config['train_csv_file'], image_config['train_record_file'])
     create_one_record_file(image_config['test_csv_file'], image_config['test_record_file'])
     logger.info('Tf-record file created!')

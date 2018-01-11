@@ -1,13 +1,13 @@
 import os
 import math
 import model
-import utils
+import my_utils
 import inputs
 import bbox_model
 import tensorflow as tf
 import tensorflow.contrib.slim as slim
 
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 def build_train(net, gt_cls_label, gt_bbox, config):
@@ -15,12 +15,12 @@ def build_train(net, gt_cls_label, gt_bbox, config):
     summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
     global_step = tf.train.get_or_create_global_step()
 
-    transformed_gt_bbox = utils.reversed_bbox_transform(gt_bbox, config['input_size'][0])
-    huber_losses = utils.huber_loss(tf.cast(transformed_gt_bbox - net.endpoints['bbox_fc'], dtype=tf.float32))
+    transformed_gt_bbox = my_utils.reversed_bbox_transform(gt_bbox, config['input_size'][0])
+    huber_losses = my_utils.huber_loss(tf.cast(transformed_gt_bbox - net.endpoints['bbox_fc'], dtype=tf.float32))
     bbox_losses = tf.reduce_sum(huber_losses, axis=1)
     bbox_loss = tf.reduce_mean(bbox_losses, name='bbox_loss')
 
-    bbox_images = utils.draw_bbox(net.endpoints['images'], net.endpoints['bbox_fc'])
+    bbox_images = my_utils.draw_bbox(net.endpoints['images'], net.endpoints['bbox_fc'])
     summaries.add(tf.summary.image('prediction/bbox', bbox_images))
 
     gt_cls_label = tf.expand_dims(gt_cls_label, axis=-1)
@@ -84,7 +84,7 @@ def build_train(net, gt_cls_label, gt_bbox, config):
 
 def train_from_scratch():
     logger.info('Training from scratch...')
-    config = utils.load_config()
+    config = my_utils.load_config()
     # data = inputs.load_raw_data(config['database'], config)
     # dermis_data = inputs.load_raw_data('dermis', config)
     # data = data + dermis_data
@@ -95,8 +95,8 @@ def train_from_scratch():
     data = dermis + kfold_train_data
 
     n_examples_for_train = len(data)
-    n_steps_for_train = utils.calc_training_steps(config['n_epochs_for_train'], config['batch_size'],
-                                                  n_examples_for_train)
+    n_steps_for_train = my_utils.calc_training_steps(config['n_epochs_for_train'], config['batch_size'],
+                                                     n_examples_for_train)
 
     config['n_examples_for_train'] = n_examples_for_train
     with tf.Graph().as_default() as g:
@@ -111,7 +111,7 @@ def train_from_scratch():
 
         logger.info('Done loading data set `%s`, %i examples in total' % (config['database'], len(data)))
 
-        utils.create_and_delete_if_exists(config['train_dir'])
+        my_utils.create_and_delete_if_exists(config['train_dir'])
         saver = tf.train.Saver()
         writer = tf.summary.FileWriter(config['train_dir'], graph=g)
         with tf.Session() as sess:
@@ -126,14 +126,14 @@ def train_from_scratch():
                     logger.info(fmt.format(i, n_steps_for_train, bbox_loss_val, total_loss_val))
 
                 if i % config['checkpoint_every'] == 0:
-                    utils.save_model(saver, config)
+                    my_utils.save_model(saver, config)
                     logger.info('Model saved at step-%i' % sess.run(global_step))
 
                 if config['save_summary_every'] and i % config['save_summary_every'] == 0:
-                    utils.add_summary(writer, summary_op, feed_dict)
+                    my_utils.add_summary(writer, summary_op, feed_dict)
                     logger.info('Summary saved at step-%i' % sess.run(global_step))
 
-            save_path = utils.save_model(saver, config)
+            save_path = my_utils.save_model(saver, config)
             logger.info('Done training, model saved at %s' % (save_path,))
 
 

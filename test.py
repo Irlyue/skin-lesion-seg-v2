@@ -1,4 +1,4 @@
-import utils
+import my_utils
 import model
 import inputs
 import bbox_model
@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 
 from scipy.misc import imresize
 
-config = utils.load_config()
-logger = utils.get_default_logger()
+config = my_utils.load_config()
+logger = my_utils.get_default_logger()
 
 
 def test_model():
@@ -23,7 +23,7 @@ def test_huber_loss():
     x = np.linspace(4, -4, 50)
     with tf.Graph().as_default():
         xx = tf.constant(x)
-        yy = utils.huber_loss(xx)
+        yy = my_utils.huber_loss(xx)
         with tf.Session() as sess:
             a, b = sess.run([xx, yy])
     plt.plot(a, b)

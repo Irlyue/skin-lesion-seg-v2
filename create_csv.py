@@ -1,9 +1,9 @@
-import utils
+import my_utils
 import inputs
 import pandas as pd
 
 
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 def to_csv(data):
@@ -26,8 +26,8 @@ def to_csv(data):
 
 def main():
     logger.info('Creating csv file...')
-    config = utils.load_config()
-    image_config = utils.load_config('./image_config.json')
+    config = my_utils.load_config()
+    image_config = my_utils.load_config('./image_config.json')
     k = image_config['k']
     n_folds = image_config['n_folds']
     split_seed = image_config['split_seed']

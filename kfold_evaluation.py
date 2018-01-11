@@ -1,19 +1,19 @@
 import os
 import crf
 import json
-import utils
+import my_utils
 import inputs
 import evaluation
 import tensorflow as tf
 
 
-logger = utils.get_default_logger()
+logger = my_utils.get_default_logger()
 
 
 def kfold_evaluation():
     final_result = []
     logger.info('K-fold evaluation process...')
-    config = utils.load_config()
+    config = my_utils.load_config()
     dermis = inputs.load_training_data('dermis', config)
     dermquest = inputs.load_training_data('dermquest', config)
     n_folds = config['n_folds']
@@ -23,8 +23,8 @@ def kfold_evaluation():
                                         type_='test',
                                         seed=config['split_seed'])
 
-        kfold_config = utils.get_config_for_kfold(config,
-                                                  train_dir=os.path.join(config['train_dir'], str(i)))
+        kfold_config = my_utils.get_config_for_kfold(config,
+                                                     train_dir=os.path.join(config['train_dir'], str(i)))
         logger.info('Evaluating for %i-th fold data...' % i)
         result = evaluate_one_fold(test_data, kfold_config)
         final_result.append(result)
@@ -56,7 +56,7 @@ def aggregate_result(results):
     for result in results:
         update_dict(final_result, result)
 
-    final_result.update(utils.metric_many_from_counter(final_result))
+    final_result.update(my_utils.metric_many_from_counter(final_result))
     logger.info('Final result:\n%s' % json.dumps(final_result, indent=2))
 
 
