@@ -5,6 +5,7 @@ export BASE_DIR=/home/wenfeng/all-files/skin-lesion-seg-v2
 
 export PYTHONPATH=$PYTHONPATH:$MODULE_PATH:$MODULE_PATH/slim
 
+rm -r training/train/
 #####################################for loop#######################################
 for fold in {0..3}
 do
