@@ -141,3 +141,14 @@ def get_kth_fold(data, k, n_folds, seed=None, type_='train'):
     listing = [data.listing[i] for i in idx]
     # return idx
     return SkinData(images, labels, bboxs, listing)
+
+
+def load_one_example(base, size=None):
+    image = imread(base + '_orig.jpg')
+    label = imread(base + '_contour.png')
+    label[label == 255] = 1
+    bbox = my_utils.calc_bbox(label)
+    if size:
+        image = imresize(image, size=size)
+        label = imresize(label, size=size, interp='nearest')
+    return image, label, bbox
