@@ -262,14 +262,14 @@ def resize_label(x, size):
 #                        image utilities                          #
 ###################################################################
 def imresize_highest_to(image, h, method='bilinear'):
-    height, width, _ = image.shape
+    height, width = image.shape[:2]
     ratio = h * 1.0 / max(height, width)
     new_h, new_w = int(height * ratio), int(width * ratio)
     return imresize(image, (new_h, new_w), interp=method)
 
 
 def imresize_smallest_to(image, h, method='bilinear'):
-    height, width, _ = image.shape
+    height, width = image.shape[:2]
     ratio = h * 1.0 / min(height, width)
     new_h, new_w = int(height * ratio), int(width * ratio)
     return imresize(image, (new_h, new_w), interp=method)

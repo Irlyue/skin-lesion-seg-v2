@@ -143,11 +143,17 @@ def get_kth_fold(data, k, n_folds, seed=None, type_='train'):
     return SkinData(images, labels, bboxs, listing)
 
 
-def load_one_example(base, size=None):
+def load_one_example(base, smallest_to=None, highest_to=None, size=None):
     image = imread(base + '_orig.jpg')
     label = imread(base + '_contour.png')
     label[label == 255] = 1
-    if size:
+    if smallest_to:
+        image = my_utils.imresize_smallest_to(image, smallest_to)
+        label = my_utils.imresize_smallest_to(label, smallest_to, method='nearest')
+    elif highest_to:
+        image = my_utils.imresize_highest_to(image, highest_to)
+        label = my_utils.imresize_highest_to(label, highest_to, method='nearest')
+    elif size:
         image = imresize(image, size=size)
         label = imresize(label, size=size, interp='nearest')
     bbox = my_utils.calc_bbox(label)
