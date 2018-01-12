@@ -8,6 +8,8 @@ cd $MODULE_PATH
 for fold in {0..3}
 do
 
+echo "-------------------------->Exporting model $fold<---------------------------"
+
 python object_detection/export_inference_graph.py \
     --input_type=image_tensor \
     --pipeline_config_path=$BASE_DIR/training/ssd_mobilenet_v1_pets.config \

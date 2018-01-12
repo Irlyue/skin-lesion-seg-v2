@@ -12,6 +12,7 @@ do
 # First generate k-th fold data
 cd $BASE_DIR
 python create_kth_data.py $fold
+python create_tfrecord.py
 
 # Then run the training
 cd $MODULE_PATH
