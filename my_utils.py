@@ -8,6 +8,7 @@ import logging.config
 import tensorflow as tf
 
 import tensorflow.contrib.slim as slim
+from scipy.misc import imresize
 
 
 class Timer:
@@ -260,6 +261,20 @@ def resize_label(x, size):
 ###################################################################
 #                        image utilities                          #
 ###################################################################
+def imresize_highest_to(image, h, method='bilinear'):
+    height, width, _ = image.shape
+    ratio = h * 1.0 / max(height, width)
+    new_h, new_w = int(height * ratio), int(width * ratio)
+    return imresize(image, (new_h, new_w), interp=method)
+
+
+def imresize_smallest_to(image, h, method='bilinear'):
+    height, width, _ = image.shape
+    ratio = h * 1.0 / min(height, width)
+    new_h, new_w = int(height * ratio), int(width * ratio)
+    return imresize(image, (new_h, new_w), interp=method)
+
+
 def bbox_xy_to_tlwh(x, size):
     """
     Change bounding-box prediction(ymin, xmin, ymax, xmax) back to its size. e.g.(0.1, 0.1, 0.8, 0.8)
