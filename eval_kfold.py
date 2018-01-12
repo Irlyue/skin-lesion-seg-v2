@@ -69,8 +69,8 @@ CKPT_PATH = BASE_DIR + 'training/train/%d/output_inference_graph.pb/frozen_infer
 OUT_PATH = BASE_DIR + 'training/train/%d/result.pkl'
 
 if __name__ == '__main__':
-    sys.argv.append(None)
+    sys.argv.append(0.0)
     fold = int(sys.argv[1])
-    ignore_iou = int(sys.argv[2])
+    ignore_iou = float(sys.argv[2])
     eval_one_fold(fold, CKPT_PATH % fold, OUT_PATH % fold, ignore_iou)
 
