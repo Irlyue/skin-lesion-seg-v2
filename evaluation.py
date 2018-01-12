@@ -131,3 +131,25 @@ def evaluate_one_model(mm, data, config):
     result.update(my_utils.metric_many_from_counter(result))
     result['mIoU'] = np.mean(iou)
     return result
+
+
+def inference_with_restored_model(net, image, label, bbox_gt=None, verbose=True, times=1, gt_prob=0.8):
+    if verbose:
+        print('Processing image with shape%s' % (image.shape,))
+    bbox_pred = net.inference_box(image)
+    bbox_pred = my_utils.bbox_xy_to_tlwh(bbox_pred, size=image.shape[:2])
+
+    prediction = crf.crf_from_bbox(image, bbox=bbox_pred, gt_prob=gt_prob)
+    if times > 1:
+        for i in range(times - 1):
+            unary = crf.get_unary_term(prediction, unary_from='label', n_classes=2, gt_prob=gt_prob)
+            prediction = crf.crf_post_process(image, unary)
+
+    result = my_utils.count_many(prediction, label)
+    prediction = {
+        'label': prediction,
+        'bbox': bbox_pred,
+    }
+    if bbox_gt is not None:
+        prediction['IoU'] = my_utils.calc_bbox_iou(bbox_pred, bbox_gt)
+    return result, prediction
