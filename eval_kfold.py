@@ -30,6 +30,8 @@ class RestoredModel:
 
 
 def eval_one_fold(fold, ckpt_path, out_path, ignore_iou=None):
+    if ignore_iou:
+        logger.warning('Will ignore images with IoU small than %.3f' % ignore_iou)
     config = my_utils.load_config()
     net = RestoredModel(ckpt_path)
     dermquest = inputs.load_raw_data('dermquest', config)
@@ -47,19 +49,22 @@ def eval_one_fold(fold, ckpt_path, out_path, ignore_iou=None):
             for key in to_update:
                 target[key] += to_update[key]
         with tf.Session(graph=g, config=tf.ConfigProto(device_count={'GPU': 0})):
+            counter = 0
             for i, base in enumerate(test_data.listing):
-                image, label, bbox_gt = inputs.load_one_example(base, highest_to=600)
+                image, label, bbox_gt = inputs.load_one_example(base, highest_to=800)
                 result_i, _ = evaluation.inference_with_restored_model(net, image, label,
                                                                        bbox_gt=bbox_gt,
                                                                        verbose=False,
                                                                        times=3,
                                                                        gt_prob=0.51)
                 if ignore_iou and _['IoU'] < ignore_iou:
-                    print(i, '---->')
+                    counter += 1
+                    print(i, base, '---->')
                     continue
                 update_dict(result, result_i)
                 result_i.update(my_utils.metric_many_from_counter(result_i))
             result.update(my_utils.metric_many_from_counter(result))
+            logger.warning('%d of the images are ignored' % counter)
             logger.info(result)
     my_utils.dump_obj(out_path, result)
     logger.info('Result saved at %s' % out_path)
