@@ -260,6 +260,22 @@ def resize_label(x, size):
 ###################################################################
 #                        image utilities                          #
 ###################################################################
+def bbox_xy_to_tlwh(x, size):
+    """
+    Change bounding-box prediction(ymin, xmin, ymax, xmax) back to its size. e.g.(0.1, 0.1, 0.8, 0.8)
+
+    Return:
+        result: tuple, four integers giving(top, left, height, width)
+    """
+    h, w = size
+    ymin, xmin, ymax, xmax = x
+    top = int(ymin * h)
+    left = int(xmin * w)
+    height = int((ymax - ymin) * h)
+    width = int((xmax - xmin) * w)
+    return top, left, height, width
+
+
 def aug_image(image, label, bbox):
     def randint(low, high):
         if low == high:
