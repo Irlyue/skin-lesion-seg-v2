@@ -147,8 +147,8 @@ def load_one_example(base, size=None):
     image = imread(base + '_orig.jpg')
     label = imread(base + '_contour.png')
     label[label == 255] = 1
-    bbox = my_utils.calc_bbox(label)
     if size:
         image = imresize(image, size=size)
         label = imresize(label, size=size, interp='nearest')
+    bbox = my_utils.calc_bbox(label)
     return image, label, bbox
