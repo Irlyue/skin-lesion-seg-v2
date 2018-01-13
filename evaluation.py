@@ -1,6 +1,7 @@
 import crf
 import model
 import my_utils
+import seg_model
 import bbox_model
 import numpy as np
 import tensorflow as tf
@@ -48,6 +49,27 @@ class EvalBboxModel(EvalModelAbstract):
         self.model = bbox_model.Model(self.image, config['input_size'],
                                       prep_func=prep_image_for_test)
         self.load_self(config)
+
+
+class SegRestoredModel(EvalModelAbstract):
+    def __init__(self, ckpt_path):
+        super().__init__()
+        with tf.Graph().as_default() as g:
+            config = my_utils.load_config()
+            config['batch_size'] = 1
+            image_ph, label_ph = seg_model.model_placeholders(config)
+            self.image_ph = image_ph
+            self.model = seg_model.SegModel(image_ph, True)
+            saver = tf.train.Saver()
+            self.session = tf.Session(graph=g, config=tf.ConfigProto(device_count={'GPU': 1}))
+            saver.restore(self.session, ckpt_path)
+
+    def _build_feed_dict(self, image):
+        image = image[None] if len(image.shape) == 3 else image
+        return {self.image_ph: image}
+
+    def inference_mask(self, image):
+        return self.inference(image, ['mask'])[0]
 
 
 def inference_one_image_from_prob(image):
