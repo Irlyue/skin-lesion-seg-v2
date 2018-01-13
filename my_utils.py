@@ -88,6 +88,18 @@ def load_config(path=None):
 ###################################################################
 #                        tf utilities                             #
 ###################################################################
+def metric_summary_op(labels, predictions):
+    tp, tp_op = slim.metrics.streaming_true_positives(labels=labels, predictions=predictions)
+    tn, tn_op = slim.metrics.streaming_true_negatives(labels=labels, predictions=predictions)
+    fp, fp_op = slim.metrics.streaming_false_positives(labels=labels, predictions=predictions)
+    fn, fn_op = slim.metrics.streaming_false_negatives(labels=labels, predictions=predictions)
+    sensitivity = tf.divide(tp, tp + fn, name='sensitivity')
+    specificity = tf.divide(tn, tn + fp, name='specificity')
+    accuracy, ac_op = tf.metrics.accuracy(labels=labels, predictions=predictions)
+    update_op = tf.group(tp_op, tn_op, fp_op, fn_op, ac_op)
+    return accuracy, sensitivity, specificity, update_op
+
+
 def draw_bbox(images, boxes, name='bounding_box'):
     def box_transform_fn(box):
         top, left, height, width = box[0], box[1], box[2], box[3]

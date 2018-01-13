@@ -19,10 +19,10 @@ def build_train(net, labels, config):
     if config['reg']:
         reg = tf.constant(config['reg'], dtype=tf.float32, name='reg')
         reg_loss = tf.multiply(reg, tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)), name='reg_loss')
-        total_loss = reg_loss + seg_loss
+        total_loss = tf.add(reg_loss, seg_loss, name='total_loss')
         summaries.add(tf.summary.scalar('loss/reg_loss', reg_loss))
     else:
-        total_loss = seg_loss
+        total_loss = tf.add(seg_loss, 0.0, name='total_loss')
 
     loss_averages = tf.train.ExponentialMovingAverage(0.9, name='avg')
     loss_average_op = loss_averages.apply([total_loss, seg_loss])
@@ -42,9 +42,11 @@ def build_train(net, labels, config):
     # image summary
     summaries.add(tf.summary.image('images', net.endpoints['images']))
 
-    # accuracy summary
-    accuracy, accuracy_update_op = tf.metrics.accuracy(labels, net.endpoints['mask'])
-    summaries.add(tf.summary.scalar('accuracy', accuracy))
+    # metric summary
+    accuracy, sensitivity, specificity, update_op = my_utils.metric_summary_op(labels, net.endpoints['mask'])
+    summaries.add(tf.summary.scalar('metric/accuracy', accuracy))
+    summaries.add(tf.summary.scalar('metric/sensitivity', sensitivity))
+    summaries.add(tf.summary.scalar('metric/specificity', specificity))
 
     n_steps_per_epoch = int(math.ceil(config['n_examples_for_train'] // config['batch_size']))
     n_epochs_per_decay = config['n_epochs_per_decay']
@@ -59,13 +61,15 @@ def build_train(net, labels, config):
     solver = tf.train.AdamOptimizer(lr)
     train_op = solver.minimize(total_loss, global_step=global_step)
 
-    with tf.control_dependencies([loss_average_op, accuracy_update_op]):
+    with tf.control_dependencies([loss_average_op, update_op]):
         summary_op = tf.summary.merge(list(summaries), name='summary_op')
 
     debug = {
         'seg_loss': seg_loss,
         'total_loss': total_loss,
-        'accuracy': accuracy
+        'accuracy': accuracy,
+        'specificity': specificity,
+        'sensitivity': sensitivity
     }
     return train_op, summary_op, debug
 
@@ -100,7 +104,7 @@ def train_from_scratch():
         my_utils.create_and_delete_if_exists(config['train_dir'])
         saver = tf.train.Saver()
         writer = tf.summary.FileWriter(config['train_dir'], graph=g)
-        with tf.Session() as sess:
+        with tf.Session(config=tf.ConfigProto(device_count={'GPU': 1})) as sess:
             tf.global_variables_initializer().run()
             tf.local_variables_initializer().run()
             for i, (images, labels, _) in enumerate(data.aug_train_batch(config)):
