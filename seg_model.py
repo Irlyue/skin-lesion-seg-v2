@@ -11,8 +11,9 @@ preprocessing_factory = importlib.import_module('preprocessing.preprocessing_fac
 
 
 def model_placeholders(config):
-    images = tf.placeholder(tf.uint8, shape=(1, *config['input_size'], 3))
-    labels = tf.placeholder(tf.int32, shape=(1, *config['input_size']))
+    batch_size = config['batch_size']
+    images = tf.placeholder(tf.uint8, shape=(batch_size, *config['input_size'], 3))
+    labels = tf.placeholder(tf.int32, shape=(batch_size, *config['input_size']))
     return images, labels
 
 
