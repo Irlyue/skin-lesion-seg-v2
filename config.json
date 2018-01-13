@@ -6,6 +6,7 @@
   "data_dir": "/home/wenfeng/datasets/skin-lesion",
   "train_dir": "train/",
   "database":"dermquest",
+  "reg": 1.0,
   "n_epochs_for_train": 80,
   "n_epochs_per_decay": 20,
   "split_seed": 0,
