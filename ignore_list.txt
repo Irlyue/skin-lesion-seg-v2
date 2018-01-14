@@ -1,0 +1,1 @@
+/home/wenfeng/datasets/skin-lesion/Skin Image Data Set-1/skin_data/melanoma/dermquest/LMM13
