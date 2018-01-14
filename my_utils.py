@@ -9,6 +9,7 @@ import tensorflow as tf
 
 import tensorflow.contrib.slim as slim
 from scipy.misc import imresize
+from collections import deque
 
 
 class Timer:
@@ -434,3 +435,44 @@ def calc_bbox_iou(box_a, box_b):
     box_b_area = calc_bbox_area(box_b)
     iou = in_area * 1.0 / (box_a_area + box_b_area - in_area)
     return iou
+
+
+def hole_filling(mask):
+    height, width = mask.shape
+    idx = 1
+    flag = np.zeros_like(mask)
+    best_idx = -1
+    best_count = -1
+
+    def inrange(pos):
+        pi, pj = pos
+        return 0 <= pi < height and 0 <= pj < width
+
+    def fill_from(pos, index):
+        counter = 1
+        queue = deque()
+        queue.append(pos)
+        DXS = [1, 0, -1, 0]
+        DYS = [0, 1, 0, -1]
+        while len(queue) != 0:
+            tpi, tpj = queue.pop()
+            for dx, dy in zip(DXS, DYS):
+                npi, npj = tpi + dx, tpj + dy
+                if inrange((npi, npj)) and mask[npi, npj] == 1 and flag[npi, npj] == 0:
+                    queue.append((npi, npj))
+                    flag[npi, npj] = index
+                    counter += 1
+        return counter
+
+    for i in range(height):
+        for j in range(width):
+            if mask[i, j] == 0 or flag[i, j] != 0:
+                continue
+            count = fill_from((i, j), idx)
+            if best_count < count:
+                best_idx = idx
+                best_count = count
+            idx += 1
+    result = np.zeros_like(mask)
+    result[flag == best_idx] = 1
+    return result, flag

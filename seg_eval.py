@@ -4,7 +4,7 @@ import my_utils
 import evaluation
 import tensorflow as tf
 
-from kfold_seg_evaluation import cnn_eval_one, crf_eval_one, crf_label_eval_one
+from kfold_seg_evaluation import cnn_eval_one, crf_eval_one, crf_label_eval_one, cnn_hole_filling_eval_one
 
 
 logger = my_utils.get_default_logger()
@@ -62,6 +62,7 @@ if __name__ == '__main__':
     eval_funcs = {
         'cnn': cnn_eval_one,
         'crf': crf_eval_one,
-        'crf_label': lambda mm, image, label: crf_label_eval_one(mm, image, label, gt_prob=0.9)
+        'crf_label': lambda mm, image, label: crf_label_eval_one(mm, image, label, gt_prob=0.9),
+        'cnn_hole_filling': cnn_hole_filling_eval_one
     }
     display_results(eval_many_methods(eval_funcs))
