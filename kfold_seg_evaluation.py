@@ -14,8 +14,8 @@ logger = my_utils.get_default_logger()
 def cnn_eval_one(mm, image, label):
     out = mm.inference(image, ['mask'])[0]
     out = np.squeeze(out)
-    result = my_utils.metric_many_from_predictions(predictions=out,
-                                                   labels=label)
+    result = my_utils.count_many(predictions=out,
+                                labels=label)
     return result
 
 
@@ -24,8 +24,8 @@ def crf_eval_one(mm, image, label):
     out, prob = np.squeeze(out), np.squeeze(prob)
     unary = crf.get_unary_term(prob)
     crf_out = crf.crf_post_process(image, unary)
-    result = my_utils.metric_many_from_predictions(predictions=crf_out,
-                                                   labels=label)
+    result = my_utils.count_many(predictions=crf_out,
+                                 labels=label)
     return result
 
 
@@ -35,8 +35,8 @@ def crf_label_eval_one(mm, image, label, gt_prob):
 
     unary = crf.get_unary_term(out, unary_from='label', gt_prob=gt_prob, n_classes=2)
     crf_label_out = crf.crf_post_process(image, unary)
-    result = my_utils.metric_many_from_predictions(predictions=crf_label_out,
-                                                   labels=label)
+    result = my_utils.count_many(predictions=crf_label_out,
+                                 labels=label)
     return result
 
 
@@ -56,7 +56,7 @@ def kfold_evaluation(eval_one_func):
                                                      train_dir=os.path.join(config['train_dir'], str(i)))
         logger.info('Evaluating for %i-th fold data...' % i)
         mm = evaluation.SegRestoredModel(tf.train.latest_checkpoint(config['train_dir']))
-        result = test_one_model(mm, test_data, kfold_config, eval_one_func)
+        result = test_one_model(mm, test_data.listing, kfold_config, eval_one_func)
         results.append(result)
         logger.info('************************************\n\n')
     logger.info('Done evaluation')
@@ -104,9 +104,29 @@ def aggregate_result(results):
 
 def mean_aggregate_result(results):
     final_result = {}
+    n_folds = len(results)
     for key in results[0]:
-        final_result[key] = np.mean(result[key] for result in results)
+        final_result[key] = sum(result[key] for result in results) * 1.0 / n_folds
     return final_result
+
+
+def eval_many_methods(eval_funcs):
+    eval_results = {}
+    for key, eval_func in eval_funcs.items():
+        logger.info('-----------------------> %s' % key)
+        results = kfold_evaluation(eval_func)
+        eval_results[key] = results
+    return eval_results
+
+
+def display_results(results):
+    def display_one(result):
+        final_result = mean_aggregate_result(result)
+        logger.info('\n'.join('%s' % json.dumps(item, indent=2) for item in result))
+        logger.info('\n---->Final Result<----\n%s' % json.dumps(final_result, indent=2))
+    for key, result in results.items():
+        logger.info('----------------------> %s' % key)
+        display_one(result)
 
 
 if __name__ == '__main__':
@@ -115,9 +135,4 @@ if __name__ == '__main__':
         'crf': crf_eval_one,
         'crf_label': lambda mm, image, label: crf_label_eval_one(mm, image, label, gt_prob=0.9)
     }
-    for k, eval_func in eval_funcs.items():
-        logger.info('-------------------------> %s' % k)
-        rs = kfold_evaluation(eval_func)
-        fr = mean_aggregate_result(rs)
-        logger.info('\n'.join('%s' % json.dumps(r, indent=2) for r in rs))
-        logger.info('\n---->Final Result<----\n%s' % json.dumps(fr, indent=2))
+    display_results(eval_many_methods(eval_funcs))
