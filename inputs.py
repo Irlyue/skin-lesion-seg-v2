@@ -69,7 +69,8 @@ class SkinData:
 
 def load_training_data(db, config):
     data_dir = config['data_dir']
-    images, labels, listing = load_one_database(data_dir, db)
+    ignore_list = load_ignore_list() if config['use_ignore_list'] else []
+    images, labels, listing = load_one_database(data_dir, db, ignore_list=ignore_list)
     images = [imresize(image, size=config['input_size']) for image in images]
     labels = [imresize(label, size=config['input_size'], interp='nearest') for label in labels]
     bboxs = calc_bboxs(labels)
@@ -78,9 +79,17 @@ def load_training_data(db, config):
 
 def load_raw_data(db, config):
     data_dir = config['data_dir']
-    images, labels, listing = load_one_database(data_dir, db)
+    ignore_list = load_ignore_list() if config['use_ignore_list'] else []
+    images, labels, listing = load_one_database(data_dir, db, ignore_list=ignore_list)
     bboxs = calc_bboxs(labels)
     return SkinData(images, labels, bboxs, listing)
+
+
+def load_ignore_list(path=None):
+    path = path if path else 'ignore_list.txt'
+    with open(path, 'r') as f:
+        ignore_list = [item for item in f.read().split('\n') if len(item) > 0]
+    return ignore_list
 
 
 def calc_bboxs(labels):
@@ -97,7 +106,14 @@ def get_image_list(data_dir, db):
     return melanoma, not_melanoma
 
 
-def load_one_database(data_dir, db):
+def load_one_database(data_dir, db, ignore_list=None):
+    """
+    Load images from one database.
+    :param data_dir: str, directory where the images are located
+    :param db: str, database, either `dermis` or `dermquest`.
+    :param ignore_list: list, images that should be ignored
+    :return:
+    """
     cache_path = os.path.join(tempfile.gettempdir(), db + '.pkl')
     if os.path.exists(cache_path):
         images, labels, all_files = my_utils.load_obj(cache_path)
@@ -115,6 +131,17 @@ def load_one_database(data_dir, db):
             images.append(image)
             labels.append(label)
         my_utils.dump_obj(cache_path, (images, labels, all_files))
+    if ignore_list:
+        images, labels, all_files = ignore_some_images(images, labels, all_files, ignore_list)
+    return images, labels, all_files
+
+
+def ignore_some_images(images, labels, all_files, ignore_list):
+    filtered = [(image, label, file) for image, label, file in zip(images, labels, all_files)
+                if file not in ignore_list]
+    images = [item[0] for item in filtered]
+    labels = [item[1] for item in filtered]
+    all_files = [item[2] for item in filtered]
     return images, labels, all_files
 
 
