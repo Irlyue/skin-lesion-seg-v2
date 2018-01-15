@@ -43,7 +43,7 @@ def crf_label_eval_one(mm, image, label, gt_prob):
 def cnn_hole_filling_eval_one(mm, image, label):
     out = mm.inference(image, ['mask'])[0]
     out = np.squeeze(out)
-    hole_fill_out = my_utils.hole_filling(out)
+    hole_fill_out, _ = my_utils.hole_filling(out)
     result = my_utils.count_many(predictions=hole_fill_out,
                                  labels=label)
     return result
@@ -143,6 +143,6 @@ if __name__ == '__main__':
         'cnn': cnn_eval_one,
         'crf': crf_eval_one,
         'crf_label': lambda mm, image, label: crf_label_eval_one(mm, image, label, gt_prob=0.9),
-        'cnn_hole_filling': cnn_hole_filling_eval_one
+        # 'cnn_hole_filling': cnn_hole_filling_eval_one
     }
     display_results(eval_many_methods(eval_funcs))

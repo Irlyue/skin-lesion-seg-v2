@@ -1,6 +1,7 @@
 import json
 import inputs
 import my_utils
+import argparse
 import evaluation
 import tensorflow as tf
 
@@ -8,12 +9,14 @@ from kfold_seg_evaluation import cnn_eval_one, crf_eval_one, crf_label_eval_one,
 
 
 logger = my_utils.get_default_logger()
+parser = argparse.ArgumentParser()
+parser.add_argument('--db', type=str, default='dermquest', help='which database to eval for')
 
 
 def eval_seg_model(eval_one_func):
     logger.info('K-fold evaluation process...')
     config = my_utils.load_config()
-    dermquest = inputs.load_raw_data('dermquest', config)
+    dermquest = inputs.load_raw_data(FLAGS.db, config)
 
     mm = evaluation.SegRestoredModel(tf.train.latest_checkpoint(config['train_dir']))
     result = test_one_model(mm, dermquest.listing, config, eval_one_func)
@@ -59,10 +62,11 @@ def display_results(results):
 
 
 if __name__ == '__main__':
+    FLAGS = parser.parse_args()
     eval_funcs = {
         'cnn': cnn_eval_one,
         'crf': crf_eval_one,
         'crf_label': lambda mm, image, label: crf_label_eval_one(mm, image, label, gt_prob=0.9),
-        'cnn_hole_filling': cnn_hole_filling_eval_one
+        # 'cnn_hole_filling': cnn_hole_filling_eval_one
     }
     display_results(eval_many_methods(eval_funcs))
