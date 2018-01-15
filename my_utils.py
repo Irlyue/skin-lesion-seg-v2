@@ -91,6 +91,7 @@ def load_config(path=None):
 ###################################################################
 def get_class_weights(labels, class_weights):
     with tf.name_scope('class_weights'):
+        labels = tf.cast(labels, dtype=tf.float32)
         w0 = tf.multiply(tf.ones_like(labels), class_weights[0])
         w1 = tf.multiply(tf.ones_like(labels), class_weights[1])
         weights = tf.where(tf.equal(labels, 0), x=w0, y=w1)
