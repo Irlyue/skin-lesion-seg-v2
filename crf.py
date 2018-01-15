@@ -4,7 +4,7 @@ from pydensecrf.densecrf import DenseCRF2D
 from pydensecrf.utils import unary_from_softmax, unary_from_labels
 
 
-def crf_post_process(image, unary, n_steps=5):
+def crf_post_process(image, unary, n_steps=5, sxy=80, srgb=13, compat=2):
     """
     Perform CRF post process giving the unary.
 
@@ -23,7 +23,7 @@ def crf_post_process(image, unary, n_steps=5):
 
     # pairwise potential
     d.addPairwiseGaussian(sxy=3, compat=3)
-    d.addPairwiseBilateral(sxy=80, srgb=13, rgbim=image, compat=2)
+    d.addPairwiseBilateral(sxy=sxy, srgb=srgb, rgbim=image, compat=compat)
 
     # inference
     Q = d.inference(n_steps)
