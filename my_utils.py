@@ -89,6 +89,14 @@ def load_config(path=None):
 ###################################################################
 #                        tf utilities                             #
 ###################################################################
+def get_class_weights(labels, class_weights):
+    with tf.name_scope('class_weights'):
+        w0 = tf.multiply(tf.ones_like(labels), class_weights[0])
+        w1 = tf.multiply(tf.ones_like(labels), class_weights[1])
+        weights = tf.where(tf.equal(labels, 0), x=w0, y=w1)
+    return weights
+
+
 def metric_summary_op(labels, predictions):
     tp, tp_op = slim.metrics.streaming_true_positives(labels=labels, predictions=predictions)
     tn, tn_op = slim.metrics.streaming_true_negatives(labels=labels, predictions=predictions)

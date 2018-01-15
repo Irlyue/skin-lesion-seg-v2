@@ -15,7 +15,11 @@ def build_train(net, labels, config):
 
     # [1, None, None, 2]
     logits = net.endpoints['up_score']
-    seg_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels, logits=logits, scope='seg_loss')
+    class_weights = my_utils.get_class_weights(labels, config['class_weights'])
+    seg_loss = tf.losses.sparse_softmax_cross_entropy(labels=labels,
+                                                      logits=logits,
+                                                      weights=class_weights,
+                                                      scope='seg_loss')
     if config['reg']:
         reg = tf.constant(config['reg'], dtype=tf.float32, name='reg')
         reg_loss = tf.multiply(reg, tf.add_n(tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)), name='reg_loss')
