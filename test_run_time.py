@@ -9,7 +9,7 @@ parser.add_argument('--n_gpus', type=int, default=0)
 parser.add_argument('--batch_size', type=int, default=1)
 parser.add_argument('--n_runs', type=int, default=10)
 logger = my_utils.get_default_logger()
-INPUT_SIZE = [600, 400]
+INPUT_SIZE = [400, 600]
 
 
 class RunningModel:
