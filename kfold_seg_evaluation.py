@@ -49,6 +49,18 @@ def cnn_hole_filling_eval_one(mm, image, label):
     return result
 
 
+def crf_hole_filling_eval_one(mm, image, label):
+    out, prob = mm.inference(image, ['mask', 'prob'])
+    out, prob = np.squeeze(out), np.squeeze(prob)
+
+    unary = crf.get_unary_term(prob)
+    crf_label_out = crf.crf_post_process(image, unary)
+    hole_fill_out, _ = my_utils.hole_filling(crf_label_out)
+    result = my_utils.count_many(predictions=hole_fill_out,
+                                 labels=label)
+    return result
+
+
 def kfold_evaluation(eval_one_func):
     results = []
     logger.info('K-fold evaluation process...')
@@ -141,8 +153,7 @@ def display_results(results):
 if __name__ == '__main__':
     eval_funcs = {
         'cnn': cnn_eval_one,
-        'crf': crf_eval_one,
-        'crf_label': lambda mm, image, label: crf_label_eval_one(mm, image, label, gt_prob=0.9),
+        'crf': crf_eval_one
         # 'cnn_hole_filling': cnn_hole_filling_eval_one
     }
     display_results(eval_many_methods(eval_funcs))
