@@ -66,6 +66,19 @@ class SkinData:
                 idx = i
             yield self.images[idx], self.labels[idx], self.bboxs[idx]
 
+    def new_train_batch(self, config):
+        batch_size = config['batch_size']
+        n_epochs = config['n_epochs_for_train']
+        batch_images, batch_labels, batch_bboxes = [], [], []
+        for image, label, bbox in self.train_batch(n_epochs=n_epochs):
+            batch_images.append(image)
+            batch_labels.append(label)
+            batch_bboxes.append(bbox)
+            if len(batch_images) == batch_size:
+                yield np.array(batch_images), np.array(batch_labels), np.array(batch_bboxes)
+                batch_images, batch_labels, batch_bboxes = [], [], []
+
+
 
 def load_training_data(db, config):
     data_dir = config['data_dir']
