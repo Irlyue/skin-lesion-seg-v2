@@ -18,7 +18,10 @@ def kfold_training():
 
     for i in range(n_folds):
         kfold_data = inputs.get_kth_fold(dermquest, i, n_folds, seed=config['split_seed'])
-        train_data = dermis + kfold_data
+        if config['use_dermis']:
+            train_data = kfold_data + dermis
+        else:
+            train_data = kfold_data
 
         kfold_config = my_utils.get_config_for_kfold(config,
                                                      train_dir=os.path.join(config['train_dir'], str(i)),
