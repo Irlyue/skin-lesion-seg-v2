@@ -4,7 +4,7 @@ from pydensecrf.densecrf import DenseCRF2D
 from pydensecrf.utils import unary_from_softmax, unary_from_labels
 
 
-def crf_post_process(image, unary, n_steps=5, sxy=50, srgb=6, compat=1.2):
+def crf_post_process(image, unary, n_steps=10, sxy=40, srgb=6, compat=1.0):
     """
     Perform CRF post process giving the unary.
 
